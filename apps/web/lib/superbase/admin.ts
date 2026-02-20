@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { createClient } from "@supabase/supabase-js";
+=======
+import { createClient } from '@supabase/supabase-js'
+>>>>>>> 8a50368 (resolve: accept deletion of root package-lock)
 
 export function createAdminClient() {
   return createClient(
@@ -10,5 +14,10 @@ export function createAdminClient() {
         persistSession: false,
       },
     }
+<<<<<<< HEAD
   );
 }
+=======
+  )
+}
+>>>>>>> 8a50368 (resolve: accept deletion of root package-lock)
