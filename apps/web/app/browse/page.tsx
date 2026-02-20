@@ -210,7 +210,7 @@ export default function BrowsePage() {
                                     </div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-1">No properties found</h3>
                                     <p className="text-sm text-gray-500 mb-6 max-w-xs mx-auto">
-                                        We couldn't find any matches for your current filters. Try adjusting your search criteria.
+                                        We couldn&apos;t find any matches for your current filters. Try adjusting your search criteria.
                                     </p>
                                     <button
                                         onClick={handleClearFilters}
