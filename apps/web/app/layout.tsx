@@ -6,6 +6,7 @@ import NextTopLoader from 'nextjs-toploader';
 import WalletProvider from "@/providers/WalletProvider";
 import AuthProvider from "@/providers/AuthProvider";
 import FavoritesProvider from "@/components/FavoritesProvider";
+import { Toaster } from 'react-hot-toast';
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -19,13 +20,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${inter.className} min-h-screen bg-slate-950 text-white`}>
-        <ServiceWorkerProvider>{children}</ServiceWorkerProvider>
         <NextTopLoader color="#7D00FF" showSpinner={false} />
-        <WalletProvider>
-          <AuthProvider>
-            <FavoritesProvider>{children}</FavoritesProvider>
-          </AuthProvider>
-        </WalletProvider>
+        <ServiceWorkerProvider>
+          <WalletProvider>
+            <AuthProvider>
+              <FavoritesProvider>{children}</FavoritesProvider>
+            </AuthProvider>
+          </WalletProvider>
+        </ServiceWorkerProvider>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );
