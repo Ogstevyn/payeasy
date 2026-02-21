@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import type { PostgrestError } from '@supabase/supabase-js'
 
@@ -15,6 +15,12 @@ export function useSupabaseQuery<T>(
   const [data, setData] = useState<T[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<PostgrestError | null>(null)
+
+  // Serialize dependencies to create a stable reference for comparison
+  const depsKey = useMemo(
+    () => JSON.stringify([table, dependencies]),
+    [table, dependencies]
+  )
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,7 +54,7 @@ export function useSupabaseQuery<T>(
     }
 
     fetchData()
-  }, [table, query, ...(dependencies ?? [])])
+  }, [table, query, depsKey])
 
   return { data, loading, error }
 }

@@ -1,4 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+
+let adminClient: SupabaseClient | null = null;
 
 export function createAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -16,4 +18,15 @@ export function createAdminClient() {
       persistSession: false,
     },
   });
+}
+
+export function getAdminClient() {
+  if (!adminClient) {
+    adminClient = createAdminClient();
+  }
+  return adminClient;
+}
+
+export function resetAdminClientInstance() {
+  adminClient = null;
 }

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { User, Session } from "@supabase/supabase-js";
 
 export async function createClient() {
   const cookieStore = cookies();
@@ -31,4 +32,24 @@ export async function createClient() {
       },
     }
   );
+}
+
+/**
+ * Get the current session from the server
+ * @returns The current session or null if not authenticated
+ */
+export async function getCurrentSession(): Promise<Session | null> {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  return session;
+}
+
+/**
+ * Get the current user from the server
+ * @returns The current user or null if not authenticated
+ */
+export async function getCurrentUser(): Promise<User | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
 }
