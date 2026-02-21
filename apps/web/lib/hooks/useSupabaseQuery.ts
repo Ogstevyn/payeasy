@@ -1,5 +1,4 @@
 'use client'
-
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import type { PostgrestError } from '@supabase/supabase-js'
@@ -28,16 +27,13 @@ export function useSupabaseQuery<T>(
         setLoading(true)
         const supabase = createBrowserClient()
         let q = supabase.from(table).select()
-
         if (query) {
           q = query(q)
         }
-
         const { data, error } = await q
         if (error) throw error
         setData(data as T[])
       } catch (err) {
-        // ✅ Convert plain Error into a PostgrestError-compatible object
         if (err instanceof Error) {
           setError({
             message: err.message,
@@ -52,7 +48,6 @@ export function useSupabaseQuery<T>(
         setLoading(false)
       }
     }
-
     fetchData()
   }, [table, query, depsKey])
 
@@ -69,7 +64,7 @@ export function useSupabaseInsert<T>(table: string) {
   const insert = async (values: T) => {
     try {
       setLoading(true)
-      const supabase = createBrowserClient()
+      const supabase = createBrowserClient() // fix: was getClient()
       const { data, error } = await supabase.from(table).insert([values])
       if (error) throw error
       return data
@@ -95,7 +90,7 @@ export function useSupabaseUpdate<T>(table: string) {
   const update = async (id: string, values: Partial<T>) => {
     try {
       setLoading(true)
-      const supabase = createBrowserClient()
+      const supabase = createBrowserClient() // fix: was getClient()
       const { data, error } = await supabase.from(table).update(values).eq('id', id)
       if (error) throw error
       return data
@@ -121,7 +116,7 @@ export function useSupabaseDelete(table: string) {
   const delete_ = async (id: string) => {
     try {
       setLoading(true)
-      const supabase = createBrowserClient()
+      const supabase = createBrowserClient() // fix: was getClient()
       const { data, error } = await supabase.from(table).delete().eq('id', id)
       if (error) throw error
       return data

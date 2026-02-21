@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import freighterApi from "@stellar/freighter-api";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
 import { signBlobWithFreighter } from "@/lib/stellar/freighter";
 
@@ -18,6 +21,10 @@ type LoginState =
 
 const STATUS_LABELS: Record<LoginState, string> = {
     idle: "Sign in with Stellar",
+    connecting: "Connecting...",
+    "requesting-challenge": "Requesting challenge...",
+    signing: "Please sign in wallet...",
+    verifying: "Verifying signature...",
     "requesting-challenge": "Requesting challenge…",
     signing: "Waiting for signature…",
     verifying: "Verifying…",
@@ -33,6 +40,8 @@ export default function LoginButton() {
     const { isConnected, publicKey, isInitializing, status: walletStatus, connect } = useWallet();
     const [state, setState] = useState<LoginState>("idle");
     const [error, setError] = useState<string | null>(null);
+    const [publicKey, setPublicKey] = useState<string | null>(null);
+    const router = useRouter();
     const [signedInKey, setSignedInKey] = useState<string | null>(null);
 
     const handleLogin = useCallback(async () => {
@@ -99,7 +108,8 @@ export default function LoginButton() {
             setSignedInKey(userPublicKey);
             setState("success");
 
-            setTimeout(() => window.location.reload(), 1000);
+            // Optionally reload the page so protected routes become accessible
+            setTimeout(() => router.refresh(), 1000);
         } catch (err: unknown) {
             setState("error");
             setError(
