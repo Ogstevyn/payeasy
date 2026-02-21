@@ -6,6 +6,7 @@ import NextTopLoader from 'nextjs-toploader';
 import WalletProvider from "@/providers/WalletProvider";
 import AuthProvider from "@/providers/AuthProvider";
 import FavoritesProvider from "@/components/FavoritesProvider";
+import { Toaster } from 'react-hot-toast';
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <FavoritesProvider>{children}</FavoritesProvider>
           </AuthProvider>
         </WalletProvider>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );
