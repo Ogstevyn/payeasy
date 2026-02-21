@@ -26,15 +26,11 @@ export {
 // Server (API routes, Server Components)
 export {
   createClient as createServerClient,
-  getCurrentUser,
-  getCurrentSession,
 } from './server'
 
 // Admin
 export {
   createAdminClient,
-  getAdminClient,
-  resetAdminClientInstance,
 } from './admin'
 
 // Middleware

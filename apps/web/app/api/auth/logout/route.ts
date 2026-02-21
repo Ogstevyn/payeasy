@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { successResponse } from "@/lib/api-utils";
 
 /**
@@ -11,7 +12,7 @@ export async function POST() {
   const response = successResponse({ message: "Logged out successfully" });
   
   // Clear the auth-token cookie by setting it with maxAge: 0
-  response.cookies.set("auth-token", "", {
+  cookies().set("auth-token", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",

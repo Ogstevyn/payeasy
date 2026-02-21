@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getClient } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { createBrowserClient } from '@/lib/supabase/client'
 import type { PostgrestError } from '@supabase/supabase-js'
 
@@ -49,7 +49,6 @@ export function useSupabaseQuery<T>(
     }
 
     fetchData()
-  }, dependencies)
   }, [table, query, ...(dependencies ?? [])])
 
   return { data, loading, error }
@@ -65,7 +64,7 @@ export function useSupabaseInsert<T>(table: string) {
   const insert = async (values: T) => {
     try {
       setLoading(true)
-      const supabase = getClient()
+      const supabase = getSupabaseClient()
       const { data, error } = await supabase.from(table).insert([values])
       if (error) throw error
       return data
@@ -91,7 +90,7 @@ export function useSupabaseUpdate<T>(table: string) {
   const update = async (id: string, values: Partial<T>) => {
     try {
       setLoading(true)
-      const supabase = getClient()
+      const supabase = getSupabaseClient()
       const { data, error } = await supabase.from(table).update(values).eq('id', id)
       if (error) throw error
       return data
@@ -117,7 +116,7 @@ export function useSupabaseDelete(table: string) {
   const delete_ = async (id: string) => {
     try {
       setLoading(true)
-      const supabase = getClient()
+      const supabase = getSupabaseClient()
       const { data, error } = await supabase.from(table).delete().eq('id', id)
       if (error) throw error
       return data
@@ -131,6 +130,4 @@ export function useSupabaseDelete(table: string) {
   }
 
   return { delete: delete_, loading, error }
-}
-}
 }

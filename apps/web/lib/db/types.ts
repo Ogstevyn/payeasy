@@ -20,7 +20,7 @@ export interface Listing {
 
 export type {
   // Database models
-  Listing,
+  Listing as DBListing,
   ListingRow,
   ListingInsert,
   ListingUpdate,

@@ -12,6 +12,9 @@ import type { ConversationPreview } from "@/lib/types/messages";
  */
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const limitParams = searchParams.get("limit");
+    const limit = limitParams ? parseInt(limitParams, 10) : 50;
     // 1. Authenticate
     const userId = getUserId(request);
     if (!userId) {
@@ -40,7 +43,8 @@ export async function GET(request: NextRequest) {
       .from("conversations")
       .select("id, created_at, updated_at")
       .in("id", conversationIds)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false })
+      .limit(limit);
 
     if (convError) {
       console.error("Failed to fetch conversations:", convError);
@@ -59,18 +63,44 @@ export async function GET(request: NextRequest) {
           .order("created_at", { ascending: false })
           .limit(1);
 
-        // All participants
+        // Unread count
+        const { count: unreadCount } = await supabase
+          .from("messages")
+          .select("*", { count: "exact", head: true })
+          .eq("conversation_id", conv.id)
+          .eq("read_at", null) // Assuming unread meant read_at is null but in prompt: read = false, wait, the schema says read_at is TIMESTAMPTZ, so read_at is null
+          .neq("sender_id", userId);
+
+        // All participants with profiles
         const { data: participants } = await supabase
           .from("conversation_participants")
-          .select("id, user_id")
+          .select(`
+            id,
+            user_id,
+            users:user_id (username, avatar_url)
+          `)
           .eq("conversation_id", conv.id);
+
+        const formattedParticipants = (participants ?? []).map((p: any) => ({
+          id: p.id,
+          user_id: p.user_id,
+          username: p.users?.username,
+          avatar_url: p.users?.avatar_url,
+        }));
+
+        const otherParticipant = formattedParticipants.find(p => p.user_id !== userId);
 
         return {
           id: conv.id,
           created_at: conv.created_at,
           updated_at: conv.updated_at,
           last_message: lastMessages?.[0] ?? null,
-          participants: participants ?? [],
+          participants: formattedParticipants,
+          unread_count: unreadCount ?? 0,
+          other_user: otherParticipant ? {
+            username: otherParticipant.username || 'Unknown User',
+            avatar_url: otherParticipant.avatar_url || '',
+          } : undefined,
         };
       })
     );

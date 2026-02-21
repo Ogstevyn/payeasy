@@ -16,6 +16,7 @@ type LoginState =
     | "requesting-challenge"
     | "signing"
     | "verifying"
+    | "connecting"
     | "success"
     | "error";
 
@@ -25,9 +26,6 @@ const STATUS_LABELS: Record<LoginState, string> = {
     "requesting-challenge": "Requesting challenge...",
     signing: "Please sign in wallet...",
     verifying: "Verifying signature...",
-    "requesting-challenge": "Requesting challenge…",
-    signing: "Waiting for signature…",
-    verifying: "Verifying…",
     success: "Signed in ✓",
     error: "Try again",
 };
@@ -40,7 +38,6 @@ export default function LoginButton() {
     const { isConnected, publicKey, isInitializing, status: walletStatus, connect } = useWallet();
     const [state, setState] = useState<LoginState>("idle");
     const [error, setError] = useState<string | null>(null);
-    const [publicKey, setPublicKey] = useState<string | null>(null);
     const router = useRouter();
     const [signedInKey, setSignedInKey] = useState<string | null>(null);
 
