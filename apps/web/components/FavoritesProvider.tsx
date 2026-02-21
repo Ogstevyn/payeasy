@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/superbase/client'
+import { createClient } from '@/lib/supabase/client'
 
 type FavoritesContextValue = {
   isFavorited: (listingId: string) => boolean
@@ -120,7 +120,7 @@ export default function FavoritesProvider({ children }: { children: React.ReactN
         togglingRef.current.delete(listingId)
       }
     },
-    [isAuthenticated, favoriteIds]
+    [isAuthenticated, favoriteIds, router]
   )
 
   return (

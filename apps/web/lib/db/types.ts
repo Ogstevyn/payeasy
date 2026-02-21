@@ -1,22 +1,16 @@
-export interface Listing {
-  id: string;
-  landlord_id: string;
-  title: string;
-  description: string;
-  address: string;
-  rent_xlm: number;
-  bedrooms: number;
-  bathrooms: number;
-  furnished?: boolean;
-  pet_friendly?: boolean;
-  latitude?: number;
-  longitude?: number;
-  status: "active" | "inactive" | "deleted";
-  view_count: number;
-  favorite_count: number;
-  created_at: string;
-  updated_at: string;
-}
+import type {
+  Listing,
+  ListingRow,
+  ListingInsert,
+  ListingUpdate,
+  ListingAmenity,
+  ListingAmenityRow,
+  ListingAmenityInsert,
+  ListingWithLandlord,
+  ListingWithAmenities,
+  ListingDetail,
+  ListingStatus,
+} from '@/lib/types/database'
 
 export type {
   // Database models
@@ -31,7 +25,7 @@ export type {
   ListingWithAmenities,
   ListingDetail,
   ListingStatus,
-} from '@/lib/types/database'
+}
 
 export interface ListingSearchParams {
   minPrice?: number;

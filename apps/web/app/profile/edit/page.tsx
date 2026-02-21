@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import useAuth from "../../../lib/hooks/useAuth";
 import { createBrowserClient } from "../../../lib/supabase/client";
 
@@ -94,7 +95,7 @@ export default function EditProfilePage() {
           {uploading && <div id="avatar-uploading" className="text-xs text-gray-400 mt-2" aria-live="polite">Uploading…</div>}
           {avatarUrl && (
             <div className="mt-2">
-              <img src={avatarUrl} alt={`${user.username} avatar preview`} className="w-20 h-20 rounded-full object-cover" />
+              <Image src={avatarUrl} alt={`${user.username} avatar preview`} width={80} height={80} className="w-20 h-20 rounded-full object-cover" />
             </div>
           )}
         </label>

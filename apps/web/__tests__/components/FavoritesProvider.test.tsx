@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import FavoritesProvider, { useFavoritesContext } from '@/components/FavoritesProvider';
-import { createClient } from '@/lib/superbase/client';
+import { createClient } from '@/lib/supabase/client';
 
 // Mock next/navigation
 const mockRouterPush = jest.fn();

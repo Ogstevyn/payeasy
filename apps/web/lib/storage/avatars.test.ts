@@ -188,7 +188,7 @@ describe('Avatar Storage', () => {
         },
       };
 
-      await deleteAvatar(mockSupabase, 'user-123/avatar.jpg');
+      await deleteAvatar(mockSupabase as any, 'user-123/avatar.jpg');
 
       expect(mockBucket.remove).toHaveBeenCalledWith(['user-123/avatar.jpg']);
     });
@@ -205,7 +205,7 @@ describe('Avatar Storage', () => {
         },
       };
 
-      await expect(deleteAvatar(mockSupabase, 'user-123/avatar.jpg')).rejects.toThrow(
+      await expect(deleteAvatar(mockSupabase as any, 'user-123/avatar.jpg')).rejects.toThrow(
         'Failed to delete avatar'
       );
     });
@@ -225,7 +225,7 @@ describe('Avatar Storage', () => {
         },
       };
 
-      const result = getAvatarPublicUrl(mockSupabase, 'user-123/avatar.jpg');
+      const result = getAvatarPublicUrl(mockSupabase as any, 'user-123/avatar.jpg');
 
       expect(result).toBe(publicUrl);
       expect(mockBucket.getPublicUrl).toHaveBeenCalledWith('user-123/avatar.jpg');
