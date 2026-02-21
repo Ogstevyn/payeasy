@@ -104,6 +104,8 @@ export interface ListingSearchParams {
   amenities?: string[]
   /** Full-text search query across title and description. */
   search?: string
+  /** Bounding box for map view format: "west,south,east,north". */
+  bbox?: string
 
   sortBy?: 'price' | 'created_at' | 'bedrooms' | 'bathrooms'
   order?: 'asc' | 'desc'

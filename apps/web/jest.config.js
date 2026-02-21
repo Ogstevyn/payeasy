@@ -4,6 +4,10 @@ const config = {
     setupFilesAfterEnv: ['./jest.setup.js'],
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/$1',
+        '\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/styleMock.js',
+    },
+    testMatch: ['**/?(*.)+(spec|test).[jt]s?(x)'],
+    testPathIgnorePatterns: ['/node_modules/', '/fixtures/', '/performance/'],
     },
     testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
     transform: {

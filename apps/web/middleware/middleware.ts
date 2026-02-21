@@ -1,7 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { logger } from '../lib/logging/logger'
 
 export async function middleware(request: NextRequest) {
+  logger.info({ method: request.method, url: request.url }, 'Incoming Request');
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

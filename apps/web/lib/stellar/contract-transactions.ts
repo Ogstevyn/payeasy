@@ -128,6 +128,9 @@ function extractGasFromSimulation(simulation: any): GasEstimate | null {
   return {
     stroops: minResourceFee,
     source: "simulateTransaction",
+    cpuInstructions: Number(transactionData?.resources?.()?.instructions?.() ?? 0),
+    readBytes: Number(transactionData?.resources?.()?.readBytes?.() ?? 0),
+    writeBytes: Number(transactionData?.resources?.()?.writeBytes?.() ?? 0),
     cpuInstructions: Number((transactionData as any)?.resources?.()?.instructions?.() ?? 0),
     readBytes: Number((transactionData as any)?.resources?.()?.readBytes?.() ?? 0),
     writeBytes: Number((transactionData as any)?.resources?.()?.writeBytes?.() ?? 0),
@@ -202,6 +205,7 @@ export async function buildContractTransaction(
     .build();
 
   const simulation = await server.simulateTransaction(initialTransaction);
+  const simulationGasEstimate = extractGasFromSimulation(simulation as any);
   const simulationGasEstimate =
     "minResourceFee" in simulation ? extractGasFromSimulation(simulation) : null;
   const rpcGasEstimate = await estimateGasViaRpcMethod(rpcUrl, initialTransaction.toXDR());
@@ -249,6 +253,8 @@ export async function signContractTransaction(
       return signed;
     }
 
+    if (signed && typeof signed === "object") {
+      const signedObj = signed as any;
     // Cast signed to unknown to safely check properties on it
     const signedObj = signed as unknown as Record<string, unknown>;
 
@@ -482,6 +488,7 @@ export async function getNetworkTransactionStatus(
     const tx = await horizonServer.transactions().transaction(transactionHash).call();
     return {
       status: tx.successful ? "success" : "failed",
+      ledger: tx.ledger as any as number,
       ledger: tx.ledger_attr as number | undefined,
     };
   } catch {
