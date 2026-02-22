@@ -3,7 +3,6 @@
 import { ArrowLeftCircle, Wallet } from "lucide-react";
 import { RegisterFormData, registerSchema } from "@/lib/validators/auth";
 import { useEffect, useState } from "react";
-
 import AuthButton from "@/components/forms/AuthButton";
 import AuthInput from "@/components/forms/AuthInput";
 import FormError from "@/components/forms/FormError";
@@ -14,15 +13,32 @@ import { useRouter } from "next/navigation";
 import { useWallet } from "@/hooks/useWallet";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState<string | undefined>("");
-  const {
-    isConnected,
-    publicKey: walletPublicKey,
-    connect,
-    isInitializing: isWalletConnecting,
-  } = useWallet();
+
+  let isConnected: boolean;
+  let walletPublicKey: string | null;
+  let connect: () => Promise<void>;
+  let isWalletConnecting: boolean;
+
+  try {
+    const wallet = useWallet();
+    isConnected = wallet.isConnected;
+    walletPublicKey = wallet.publicKey;
+    connect = wallet.connect;
+    isWalletConnecting = wallet.isInitializing;
+  } catch {
+    // During build, provider might not be available
+    isConnected = false;
+    walletPublicKey = null;
+    connect = async () => {};
+    isWalletConnecting = false;
+  }
+
   const supabase = createClient();
 
   const {

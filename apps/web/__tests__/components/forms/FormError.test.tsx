@@ -1,25 +1,27 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import FormError from '@/components/forms/FormError';
+import "@testing-library/jest-dom";
+
+import { render, screen } from "@testing-library/react";
+
+import FormError from "@/components/forms/FormError";
+import React from "react";
 
 // Mock lucide-react to avoid icon rendering issues in tests if any
-jest.mock('lucide-react', () => ({
-    AlertCircle: () => <svg data-testid="alert-icon" />
+jest.mock("lucide-react", () => ({
+  AlertCircle: () => <svg data-testid="alert-icon" />,
 }));
 
-describe('FormError Component', () => {
-    it('renders correctly with a message', () => {
-        render(<FormError message="Invalid email or password" />);
+describe("FormError Component", () => {
+  it("renders correctly with a message", () => {
+    render(<FormError message="Invalid email or password" />);
 
-        expect(screen.getByText('Invalid email or password')).toBeInTheDocument();
-        expect(screen.getByTestId('alert-icon')).toBeInTheDocument();
-    });
+    expect(screen.getByText("Invalid email or password")).toBeInTheDocument();
+    expect(screen.getByTestId("alert-icon")).toBeInTheDocument();
+  });
 
-    it('returns null and does not render anything if no message is provided', () => {
-        const { container } = render(<FormError />);
+  it("returns null and does not render anything if no message is provided", () => {
+    const { container } = render(<FormError />);
 
-        expect(container).toBeEmptyDOMElement();
-        expect(screen.queryByTestId('alert-icon')).not.toBeInTheDocument();
-    });
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByTestId("alert-icon")).not.toBeInTheDocument();
+  });
 });
