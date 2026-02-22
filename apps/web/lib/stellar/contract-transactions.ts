@@ -42,7 +42,7 @@ export type BuiltContractTransaction = {
   network: StellarNetworkName;
   networkPassphrase: string;
   rpcUrl: string;
-  feeStats?: SorobanRpc.GetFeeStatsResponse;
+  feeStats?: any;
 };
 
 export type SubmittedTransaction = {
@@ -195,10 +195,9 @@ export async function buildContractTransaction(
 
   const args = (params.args ?? []).map((arg) => toScValArgument(arg));
 
-
-  let feeStats: SorobanRpc.GetFeeStatsResponse | undefined;
+  let feeStats: any | undefined;
   try {
-    feeStats = await server.getFeeStats();
+    feeStats = await (server as any).getFeeStats();
   } catch (e) {
     console.warn("Failed to fetch fee stats, using default base fee", e);
   }
@@ -252,13 +251,13 @@ export async function buildContractTransaction(
       .addOperation(contract.call(params.method, ...args))
       .setTimeout(params.timeoutSeconds ?? 60)
       .build();
-    
+
     // Note: Re-preparing or re-assembling might be needed if resource limits change, 
     // but usually, they are stable for the same call.
     if (typeof rpcWithAssembler.assembleTransaction === "function") {
-       preparedTransaction = rpcWithAssembler.assembleTransaction(preparedTransaction, simulation).build();
+      preparedTransaction = rpcWithAssembler.assembleTransaction(preparedTransaction, simulation).build();
     } else if (typeof prepareTransaction === "function") {
-       preparedTransaction = await prepareTransaction(preparedTransaction);
+      preparedTransaction = await prepareTransaction(preparedTransaction);
     }
   }
 

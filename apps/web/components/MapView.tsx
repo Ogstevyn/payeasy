@@ -270,8 +270,8 @@ export default function MapView({
                     >
                         <div
                             className={`cursor-pointer px-2 py-1 rounded-lg text-xs font-bold shadow-md transition-all hover:scale-110 whitespace-nowrap ${selectedListing?.id === listing.id
-                                    ? 'bg-primary text-white scale-110'
-                                    : 'bg-white text-primary border border-gray-200'
+                                ? 'bg-primary text-white scale-110'
+                                : 'bg-white text-primary border border-gray-200'
                                 }`}
                             onClick={() => setSelectedListing(listing)}
                         >
@@ -294,7 +294,7 @@ export default function MapView({
                     className="[&_.mapboxgl-popup-content]:p-0 [&_.mapboxgl-popup-content]:bg-transparent [&_.mapboxgl-popup-content]:shadow-none [&_.mapboxgl-popup-tip]:border-t-white"
                 >
                     <ListingPopup
-                        listing={selectedListing}
+                        listing={selectedListing as any}
                         onClose={() => setSelectedListing(null)}
                     />
                 </Popup>

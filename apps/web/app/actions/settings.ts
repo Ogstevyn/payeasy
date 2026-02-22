@@ -22,7 +22,7 @@ const SettingsSchema = z.object({
 });
 
 export async function updateSystemSettings(formData: FormData) {
-    if (!supabaseUrl || !supabaseKey) return { error: 'Database not connected' };
+    if (!supabaseUrl || !supabaseKey) throw new Error('Database not connected');
 
     const parsed = SettingsSchema.safeParse({
         fee_percentage: formData.get('fee_percentage'),
@@ -33,7 +33,7 @@ export async function updateSystemSettings(formData: FormData) {
     });
 
     if (!parsed.success) {
-        return { error: 'Invalid settings format provided.' };
+        throw new Error('Invalid settings format provided.');
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -44,10 +44,9 @@ export async function updateSystemSettings(formData: FormData) {
 
     if (error) {
         console.error('Update Failed:', error);
-        return { error: 'Failed to save settings.' };
+        throw new Error('Failed to save settings.');
     }
 
     // Globally bust the cache ensuring zero downtime updates propagate instantly
     revalidateTag('system-settings');
-    return { success: true };
 }

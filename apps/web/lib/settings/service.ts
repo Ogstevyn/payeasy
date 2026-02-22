@@ -32,7 +32,7 @@ export const getSystemSettings = unstable_cache(
             .single();
 
         if (error || !data) {
-            console.error('Failed to load system settings:', error.message);
+            console.error('Failed to load system settings:', error?.message);
             return null;
         }
         return data as SystemSettings;
