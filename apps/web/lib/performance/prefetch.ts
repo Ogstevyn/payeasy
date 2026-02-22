@@ -383,10 +383,11 @@ export function useNetworkAwarePrefetch(
 export function usePrefetchManager() {
   const manager = PrefetchManager.getInstance();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return {
     prefetch: (url: string, options?: { priority?: number; ttl?: number }) =>
       manager.prefetch(url, options),
-    getCachedData: <T = unknown,>(url: string) => manager.getCachedData<T>(url),
+    getCachedData: (url: string) => manager.getCachedData(url),
     clearCache: () => manager.clearCache(),
     getMetrics: () => manager.getMetrics(),
     setConfig: (config: PrefetchConfig) => manager.setConfig(config),
@@ -418,11 +419,10 @@ export function initPrefetchMonitoring(options?: PrefetchConfig): void {
 /**
  * Enhance an element with prefetch capabilities
  */
-export function withPrefetch<T extends { href?: string }>(Component: React.ComponentType<T>) {
-  return function PrefetchComponent(props: T) {
+export const withPrefetch = (Component: React.ComponentType<any>) => {
+  return function PrefetchComponent(props: any) {
     const { href } = props;
     const prefetch = usePrefetchOnHover(href || '/');
-
-    return <Component {...props} {...prefetch} />;
+    return React.createElement(Component, { ...props, ...prefetch });
   };
-}
+};
