@@ -294,7 +294,15 @@ export default function MapView({
                     className="[&_.mapboxgl-popup-content]:p-0 [&_.mapboxgl-popup-content]:bg-transparent [&_.mapboxgl-popup-content]:shadow-none [&_.mapboxgl-popup-tip]:border-t-white"
                 >
                     <ListingPopup
-                        listing={selectedListing}
+                        listing={{
+                            id: selectedListing.id,
+                            price: selectedListing.price,
+                            title: selectedListing.title || 'Untitled Listing',
+                            location: selectedListing.location || 'Unknown Location',
+                            bedrooms: selectedListing.bedrooms || 0,
+                            bathrooms: selectedListing.bathrooms || 0,
+                            image: selectedListing.image || '/images/placeholder.jpg',
+                        }}
                         onClose={() => setSelectedListing(null)}
                     />
                 </Popup>
