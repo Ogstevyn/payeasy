@@ -1,5 +1,7 @@
 import { type NextRequest } from "next/server";
 import { verifyJwt } from "@/lib/auth/stellar-auth";
+import { captureError } from "@/lib/error-capture";
+import { getServerClient } from "@/lib/supabase/server";
 
 /**
  * Build a successful JSON response.
@@ -45,4 +47,35 @@ export function getUserId(request: NextRequest | Request): string | null {
   if (!payload || typeof payload.sub !== "string") return null;
 
   return payload.sub;
+}
+
+/**
+ * Higher-order function to wrap API handlers with error capture.
+ */
+export function withErrorCapture(handler: (request: NextRequest, ...args: any[]) => Promise<Response>) {
+  return async (request: NextRequest, ...args: any[]) => {
+    try {
+      return await handler(request, ...args);
+    } catch (error) {
+      // Capture the error
+      const userId = getUserId(request);
+      await captureError(error, {
+        userId: userId || undefined,
+        url: request.url,
+        severity: "critical",
+        extras: {
+          method: request.method,
+          headers: Object.fromEntries(request.headers.entries()),
+        },
+      });
+
+      // Return a standard error response
+      return errorResponse(
+        process.env.NODE_ENV === "development" 
+          ? (error instanceof Error ? error.message : "Internal Server Error")
+          : "An unexpected error occurred. Our team has been notified.",
+        500
+      );
+    }
+  };
 }

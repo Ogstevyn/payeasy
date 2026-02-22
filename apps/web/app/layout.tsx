@@ -15,17 +15,22 @@ export const metadata: Metadata = {
   description: "Secure, blockchain-powered rent sharing.",
 };
 
+import { ErrorProvider } from "@/components/providers/ErrorProvider";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${inter.className} min-h-screen bg-slate-950 text-white`}>
-        <ServiceWorkerProvider>{children}</ServiceWorkerProvider>
-        <NextTopLoader color="#7D00FF" showSpinner={false} />
-        <WalletProvider>
-          <AuthProvider>
-            <FavoritesProvider>{children}</FavoritesProvider>
-          </AuthProvider>
-        </WalletProvider>
+        <ErrorProvider>
+          <ServiceWorkerProvider>
+            <NextTopLoader color="#7D00FF" showSpinner={false} />
+            <WalletProvider>
+              <AuthProvider>
+                <FavoritesProvider>{children}</FavoritesProvider>
+              </AuthProvider>
+            </WalletProvider>
+          </ServiceWorkerProvider>
+        </ErrorProvider>
       </body>
     </html>
   );
