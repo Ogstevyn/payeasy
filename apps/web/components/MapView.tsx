@@ -208,7 +208,7 @@ export default function MapView({
     return (
         <MapGL
             ref={mapRef}
-            {...viewState}
+            initialViewState={viewState}
             onMove={handleMove}
             onLoad={handleLoad}
             mapboxAccessToken={MAPBOX_TOKEN}
