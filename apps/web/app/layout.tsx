@@ -6,7 +6,10 @@ import WalletProvider from "@/providers/WalletProvider";
 import AuthProvider from "@/providers/AuthProvider";
 import FavoritesProvider from "@/components/FavoritesProvider";
 import ComparisonProvider from "@/components/ComparisonProvider";
-import ComparisonBar from "@/components/ComparisonBar";
+import dynamic from 'next/dynamic';
+
+const ComparisonBar = dynamic(() => import("@/components/ComparisonBar"), { ssr: false });
+
 import "./globals.css";
 import "@fontsource-variable/inter";
 
