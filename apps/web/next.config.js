@@ -4,6 +4,7 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Optimize package imports to enable tree-shaking for barrel files
   experimental: {
     serverComponentsExternalPackages: ['@react-pdf/renderer'],
     optimizePackageImports: [
@@ -16,10 +17,28 @@ const nextConfig = {
 
   images: {
     formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "i.pravatar.cc",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
   },
 
   // Minimize output by excluding source maps in production
   productionBrowserSourceMaps: false,
+
+  // Allow more time for static page generation (default 60s)
+  staticPageGenerationTimeout: 120,
 
   webpack(config, { isServer }) {
     config.resolve.alias = config.resolve.alias || {};
@@ -28,8 +47,7 @@ const nextConfig = {
     if (isServer) {
       config.resolve.alias["mapbox-gl/dist/mapbox-gl.css"] = false;
     }
-
-    // Create an alias for bidi-js to provide a default export wrapper
+    // bidi-js: @react-pdf/textkit expects default export; ESM resolution breaks
     config.resolve.alias['bidi-js'] = require.resolve('./node_modules/bidi-js/dist/bidi.js');
 
     // Also add to the externals to ensure proper resolution
