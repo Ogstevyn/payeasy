@@ -13,7 +13,7 @@ import type { ConversationPreview } from "@/lib/types/messages";
 export async function GET(request: NextRequest) {
   try {
     // 1. Authenticate
-    const userId = getUserId(request);
+    const userId = await getUserId(request);
     if (!userId) {
       return errorResponse("Authentication required.", 401, "UNAUTHORIZED");
     }

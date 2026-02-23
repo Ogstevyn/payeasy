@@ -13,14 +13,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, X, Home, Search, Heart, MessageCircle, User, LogIn } from 'lucide-react';
+import { Menu, X, Home, Search, Heart, MessageCircle, User, LogIn, LogOut } from 'lucide-react';
 
 interface MobileMenuProps {
   isAuthenticated?: boolean;
   userName?: string;
+  onLogout?: () => Promise<void>;
 }
 
-export default function MobileMenu({ isAuthenticated = false, userName }: MobileMenuProps) {
+export default function MobileMenu({ isAuthenticated = false, userName, onLogout }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -140,16 +141,30 @@ export default function MobileMenu({ isAuthenticated = false, userName }: Mobile
 
             <ul className="space-y-2">
               {isAuthenticated ? (
-                <li>
-                  <Link
-                    href="/profile"
-                    onClick={closeMenu}
-                    className="flex items-center gap-4 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors min-h-touch-sm"
-                  >
-                    <User size={20} className="text-gray-500" />
-                    <span className="text-base font-medium">Profile</span>
-                  </Link>
-                </li>
+                <>
+                  <li>
+                    <Link
+                      href="/profile"
+                      onClick={closeMenu}
+                      className="flex items-center gap-4 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors min-h-touch-sm"
+                    >
+                      <User size={20} className="text-gray-500" />
+                      <span className="text-base font-medium">Profile</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <button
+                      onClick={async () => {
+                        closeMenu();
+                        await onLogout?.();
+                      }}
+                      className="flex w-full items-center gap-4 rounded-lg px-4 py-3 text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors min-h-touch-sm"
+                    >
+                      <LogOut size={20} />
+                      <span className="text-base font-medium">Log out</span>
+                    </button>
+                  </li>
+                </>
               ) : (
                 <>
                   <li>

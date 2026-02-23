@@ -97,9 +97,11 @@ function getJwtSecret(): string {
 
 /**
  * Create a signed JWT with the Stellar public key as the subject.
+ * Includes a unique `jti` claim for token blacklisting on logout.
  */
 export function signJwt(publicKey: string): string {
-    return jwt.sign({ sub: publicKey }, getJwtSecret(), {
+    const jti = crypto.randomBytes(16).toString("hex");
+    return jwt.sign({ sub: publicKey, jti }, getJwtSecret(), {
         expiresIn: JWT_EXPIRY,
     });
 }

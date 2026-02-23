@@ -14,7 +14,7 @@ import type { Message, PaginatedResponse } from "@/lib/types/messages";
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // 1. Authenticate
-    const userId = getUserId(request);
+    const userId = await getUserId(request);
     if (!userId) {
       return errorResponse("Authentication required.", 401, "UNAUTHORIZED");
     }

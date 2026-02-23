@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 import { verifyJwt } from "@/lib/auth/stellar-auth";
+import { isTokenBlacklisted } from "@/lib/auth/token-blacklist";
 
 /**
  * Build a successful JSON response.
@@ -21,9 +22,9 @@ export function errorResponse(message: string, status = 400, code?: string) {
 /**
  * Extract the authenticated user's Stellar public key from the JWT cookie.
  *
- * Returns `null` when the token is missing or invalid.
+ * Returns `null` when the token is missing, invalid, or blacklisted.
  */
-export function getUserId(request: NextRequest | Request): string | null {
+export async function getUserId(request: NextRequest | Request): Promise<string | null> {
   // Try the auth-token cookie first (set by /api/auth/verify)
   let token: string | undefined;
 
@@ -43,6 +44,9 @@ export function getUserId(request: NextRequest | Request): string | null {
 
   const payload = verifyJwt(token);
   if (!payload || typeof payload.sub !== "string") return null;
+
+  // Check if the token has been blacklisted (e.g. after logout)
+  if (payload.jti && await isTokenBlacklisted(payload.jti)) return null;
 
   return payload.sub;
 }

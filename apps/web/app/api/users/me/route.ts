@@ -12,7 +12,7 @@ import type { User } from "@/lib/types";
 export async function GET(request: NextRequest) {
   try {
     // Extract public key from JWT token
-    const publicKey = getUserId(request);
+    const publicKey = await getUserId(request);
 
     if (!publicKey) {
       return errorResponse("Unauthorized - no valid token", 401, "UNAUTHORIZED");

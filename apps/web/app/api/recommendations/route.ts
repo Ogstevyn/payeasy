@@ -7,7 +7,7 @@ import { getRecommendations } from '@/lib/recommendation/engine';
 
 export async function GET (request: NextRequest) {
     const supabase = await createClient();
-    const userId = getUserId(request);
+    const userId = await getUserId(request);
     if (!userId) {
         return errorResponse("Authentication required.", 401, "UNAUTHORIZED");
     }

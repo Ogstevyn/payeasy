@@ -8,7 +8,7 @@ import { getUserId, successResponse, errorResponse } from "@/lib/api-utils";
  */
 export async function GET(request: NextRequest) {
     try {
-        const publicKey = getUserId(request);
+        const publicKey = await getUserId(request);
         if (!publicKey) return errorResponse("Unauthorized", 401, "UNAUTHORIZED");
 
         const supabase = createAdminClient();
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const publicKey = getUserId(request);
+        const publicKey = await getUserId(request);
         if (!publicKey) return errorResponse("Unauthorized", 401, "UNAUTHORIZED");
 
         const body = await request.json();
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
     try {
-        const publicKey = getUserId(request);
+        const publicKey = await getUserId(request);
         if (!publicKey) return errorResponse("Unauthorized", 401, "UNAUTHORIZED");
 
         const body = await request.json();

@@ -27,7 +27,7 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           <input
             {...register}
             {...props}
-            ref={ref}
+            ref={register?.ref ?? ref}
             className={cn(
               'block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400',
               error &&

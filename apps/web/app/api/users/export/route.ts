@@ -11,7 +11,7 @@ import { getUserId, errorResponse } from "@/lib/api-utils";
  */
 export async function GET(request: NextRequest) {
     try {
-        const publicKey = getUserId(request);
+        const publicKey = await getUserId(request);
         if (!publicKey) {
             return errorResponse("Unauthorized", 401, "UNAUTHORIZED");
         }

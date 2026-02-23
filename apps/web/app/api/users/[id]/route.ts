@@ -11,7 +11,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     let targetId: string | null = null;
     if (idParam === "me") {
-      targetId = getUserId(request) as string | null;
+      targetId = await getUserId(request) as string | null;
       if (!targetId) return errorResponse("Unauthorized", 401);
     } else {
       targetId = idParam;
@@ -38,7 +38,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     // If the request asked for "me" we already enforced auth via cookie.
     // For public profiles (other users) we avoid returning email.
-    const requester = getUserId(request);
+    const requester = await getUserId(request);
     const isOwn = requester === targetId;
 
     const payload = {
@@ -65,14 +65,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     let targetId: string | null = null;
     if (idParam === "me") {
-      targetId = getUserId(request) as string | null;
+      targetId = await getUserId(request) as string | null;
       if (!targetId) return errorResponse("Unauthorized", 401);
     } else {
       targetId = idParam;
     }
 
     // Only the owner may update their profile (service role can bypass)
-    const requester = getUserId(request);
+    const requester = await getUserId(request);
     if (requester !== targetId) return errorResponse("Forbidden", 403);
 
     const body = await request.json();

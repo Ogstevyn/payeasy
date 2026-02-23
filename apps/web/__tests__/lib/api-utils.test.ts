@@ -68,7 +68,7 @@ describe('api-utils', () => {
     });
 
     describe('getUserId', () => {
-        it('extracts user ID from auth-token cookie', () => {
+        it('extracts user ID from auth-token cookie', async () => {
             const mockRequest = {
                 cookies: {
                     get: jest.fn().mockReturnValue({ value: 'mock-jwt-token' }),
@@ -77,13 +77,13 @@ describe('api-utils', () => {
 
             (verifyJwt as jest.Mock).mockReturnValue({ sub: 'user-123' });
 
-            const userId = getUserId(mockRequest);
+            const userId = await getUserId(mockRequest);
             expect(userId).toBe('user-123');
             expect(mockRequest.cookies.get).toHaveBeenCalledWith('auth-token');
             expect(verifyJwt).toHaveBeenCalledWith('mock-jwt-token');
         });
 
-        it('extracts user ID from Authorization header', () => {
+        it('extracts user ID from Authorization header', async () => {
             const mockRequest = {
                 headers: {
                     get: jest.fn().mockReturnValue('Bearer mock-header-token'),
@@ -92,13 +92,13 @@ describe('api-utils', () => {
 
             (verifyJwt as jest.Mock).mockReturnValue({ sub: 'user-456' });
 
-            const userId = getUserId(mockRequest);
+            const userId = await getUserId(mockRequest);
             expect(userId).toBe('user-456');
             expect(mockRequest.headers.get).toHaveBeenCalledWith('authorization');
             expect(verifyJwt).toHaveBeenCalledWith('mock-header-token');
         });
 
-        it('returns null if no token is found', () => {
+        it('returns null if no token is found', async () => {
             const mockRequest = {
                 cookies: {
                     get: jest.fn().mockReturnValue(undefined),
@@ -108,12 +108,12 @@ describe('api-utils', () => {
                 },
             } as unknown as NextRequest;
 
-            const userId = getUserId(mockRequest);
+            const userId = await getUserId(mockRequest);
             expect(userId).toBeNull();
             expect(verifyJwt).not.toHaveBeenCalled();
         });
 
-        it('returns null if token is invalid or missing sub', () => {
+        it('returns null if token is invalid or missing sub', async () => {
             const mockRequest = {
                 headers: {
                     get: jest.fn().mockReturnValue('Bearer bad-token'),
@@ -122,7 +122,7 @@ describe('api-utils', () => {
 
             (verifyJwt as jest.Mock).mockReturnValue({ other_claim: true });
 
-            const userId = getUserId(mockRequest);
+            const userId = await getUserId(mockRequest);
             expect(userId).toBeNull();
         });
     });

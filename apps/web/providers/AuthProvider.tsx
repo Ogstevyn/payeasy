@@ -15,7 +15,9 @@
 'use client'
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import { AuthContext, type RegisterData, type LoginResponse } from '@/contexts/AuthContext'
+import { createClient } from '@/lib/supabase/client'
 import type { User } from '@/lib/types'
 
 // ──────────────────────────────────────────────────────────────
@@ -113,6 +115,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [publicKey, setPublicKey] = useState<string | null>(null)
+  const router = useRouter()
+  const supabase = createClient()
 
   /**
    * Fetch the current user's profile from the API.
@@ -308,10 +312,10 @@ export default function AuthProvider({ children }: AuthProviderProps) {
    */
   const logout = useCallback(async () => {
     try {
-      // Call logout endpoint to clear HTTP-only cookie
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-      })
+      // Clear Stellar JWT cookie via logout endpoint
+      await fetch('/api/auth/logout', { method: 'POST' })
+      // Clear Supabase session
+      await supabase.auth.signOut()
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
@@ -319,8 +323,9 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       setUser(null)
       setPublicKey(null)
       clearStoredToken()
+      router.push('/')
     }
-  }, [])
+  }, [supabase.auth, router])
 
   /**
    * Register a new user.

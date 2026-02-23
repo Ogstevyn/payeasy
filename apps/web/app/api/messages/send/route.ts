@@ -13,7 +13,7 @@ import type { Message } from "@/lib/types/messages";
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate
-    const senderId = getUserId(request);
+    const senderId = await getUserId(request);
     if (!senderId) {
       return errorResponse("Authentication required.", 401, "UNAUTHORIZED");
     }
