@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React, { useEffect, useCallback, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useCallback, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 /**
  * Network connection type
  */
-type NetworkType = '4g' | '3g' | '2g' | 'slow-2g' | 'unknown';
+type NetworkType = "4g" | "3g" | "2g" | "slow-2g" | "unknown";
 
 /**
  * Prefetch metrics for monitoring
@@ -24,9 +24,9 @@ interface PrefetchMetrics {
  */
 interface PrefetchConfig {
   enabled?: boolean;
-  network?: 'all' | '4g' | '3g-4g';
+  network?: "all" | "4g" | "3g-4g";
   hoverDelay?: number;
-  idlePriority?: 'high' | 'low';
+  idlePriority?: "high" | "low";
   cacheDuration?: number;
   batchSize?: number;
 }
@@ -65,9 +65,9 @@ class PrefetchManager {
   };
   private config: Required<PrefetchConfig> = {
     enabled: true,
-    network: '3g-4g',
+    network: "3g-4g",
     hoverDelay: 100,
-    idlePriority: 'low',
+    idlePriority: "low",
     cacheDuration: 5 * 60 * 1000, // 5 minutes
     batchSize: 3,
   };
@@ -88,11 +88,11 @@ class PrefetchManager {
    * Initialize cache cleanup for expired entries
    */
   private initializeCache(): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     setInterval(() => {
       const now = Date.now();
-      for (const [key, entry] of this.cache.entries()) {
+      for (const [key, entry] of Array.from(this.cache.entries())) {
         if (now - entry.timestamp > entry.ttl) {
           this.cache.delete(key);
         }
@@ -104,22 +104,22 @@ class PrefetchManager {
    * Get current network type
    */
   private getNetworkType(): NetworkType {
-    if (typeof window === 'undefined') return 'unknown';
+    if (typeof window === "undefined") return "unknown";
 
     const nav = navigator as unknown as { connection?: { effectiveType?: string } };
-    if (!nav.connection) return 'unknown';
+    if (!nav.connection) return "unknown";
 
     switch (nav.connection.effectiveType) {
-      case '4g':
-        return '4g';
-      case '3g':
-        return '3g';
-      case '2g':
-        return '2g';
-      case 'slow-2g':
-        return 'slow-2g';
+      case "4g":
+        return "4g";
+      case "3g":
+        return "3g";
+      case "2g":
+        return "2g";
+      case "slow-2g":
+        return "slow-2g";
       default:
-        return 'unknown';
+        return "unknown";
     }
   }
 
@@ -129,10 +129,10 @@ class PrefetchManager {
   private shouldPrefetchForNetwork(): boolean {
     const network = this.getNetworkType();
 
-    if (this.config.network === 'all') return true;
-    if (this.config.network === '4g') return network === '4g';
-    if (this.config.network === '3g-4g') {
-      return network === '4g' || network === '3g';
+    if (this.config.network === "all") return true;
+    if (this.config.network === "4g") return network === "4g";
+    if (this.config.network === "3g-4g") {
+      return network === "4g" || network === "3g";
     }
 
     return false;
@@ -172,9 +172,10 @@ class PrefetchManager {
       return;
     }
 
-    // Return existing pending request
+    // Wait for existing pending request
     if (this.pendingRequests.has(url)) {
-      return this.pendingRequests.get(url);
+      await this.pendingRequests.get(url);
+      return;
     }
 
     this.metrics.totalPrefetches++;
@@ -204,9 +205,9 @@ class PrefetchManager {
 
     try {
       const response = await fetch(url, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'X-Prefetch': 'true',
+          "X-Prefetch": "true",
         },
       });
 
@@ -318,7 +319,7 @@ export function usePrefetchOnIdle(urls: string[]): void {
   const manager = PrefetchManager.getInstance();
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !('requestIdleCallback' in window)) {
+    if (typeof window === "undefined" || !("requestIdleCallback" in window)) {
       // Fallback for browsers that don't support requestIdleCallback
       const timer = setTimeout(() => {
         urls.forEach((url) => manager.prefetch(url, { priority: 0 }));
@@ -350,9 +351,9 @@ export function usePrefetchOnIdle(urls: string[]): void {
 export function useNetworkAwarePrefetch(
   urls: string[],
   options?: PrefetchConfig
-): { status: 'idle' | 'loading' | 'complete'; metrics: PrefetchMetrics } {
+): { status: "idle" | "loading" | "complete"; metrics: PrefetchMetrics } {
   const manager = PrefetchManager.getInstance();
-  const [status, setStatus] = useState<'idle' | 'loading' | 'complete'>('idle');
+  const [status, setStatus] = useState<"idle" | "loading" | "complete">("idle");
 
   useEffect(() => {
     if (options) {
@@ -361,11 +362,11 @@ export function useNetworkAwarePrefetch(
   }, [options, manager]);
 
   useEffect(() => {
-    setStatus('loading');
+    setStatus("loading");
 
     const prefetchAll = async () => {
       await Promise.allSettled(urls.map((url) => manager.prefetch(url)));
-      setStatus('complete');
+      setStatus("complete");
     };
 
     prefetchAll();
@@ -383,7 +384,6 @@ export function useNetworkAwarePrefetch(
 export function usePrefetchManager() {
   const manager = PrefetchManager.getInstance();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return {
     prefetch: (url: string, options?: { priority?: number; ttl?: number }) =>
       manager.prefetch(url, options),
@@ -399,7 +399,7 @@ export function usePrefetchManager() {
  * Initialize prefetch monitoring
  */
 export function initPrefetchMonitoring(options?: PrefetchConfig): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   const manager = PrefetchManager.getInstance();
 
@@ -408,10 +408,10 @@ export function initPrefetchMonitoring(options?: PrefetchConfig): void {
   }
 
   // Log metrics periodically in development
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     setInterval(() => {
       const metrics = manager.getMetrics();
-      console.log('[Prefetch Metrics]', metrics);
+      console.log("[Prefetch Metrics]", metrics);
     }, 30000);
   }
 }
@@ -422,7 +422,7 @@ export function initPrefetchMonitoring(options?: PrefetchConfig): void {
 export const withPrefetch = (Component: React.ComponentType<any>) => {
   return function PrefetchComponent(props: any) {
     const { href } = props;
-    const prefetch = usePrefetchOnHover(href || '/');
+    const prefetch = usePrefetchOnHover(href || "/");
     return React.createElement(Component, { ...props, ...prefetch });
   };
 };

@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 // Simulate metric fluctuations for demo purposes
 function generateMetricUpdate() {
   const baseStats = {
@@ -49,6 +51,9 @@ function generateActivityUpdate() {
   };
 }
 
+// Cap ticks so build/static generation can finish; real clients get 1 update then stream ends unless we increase this
+const MAX_TICKS = 1;
+
 export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
 
@@ -57,7 +62,7 @@ export async function GET(request: NextRequest) {
       let tick = 0;
 
       const interval = setInterval(() => {
-        if (request.signal.aborted) {
+        if (request.signal.aborted || tick >= MAX_TICKS) {
           clearInterval(interval);
           controller.close();
           return;
