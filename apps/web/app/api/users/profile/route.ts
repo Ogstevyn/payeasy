@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/superbase/server";
+import { createClient } from "@/lib/supabase/server";
 import { successResponse, handleError } from "@/app/api/utils/response";
 import { requireAuth } from "@/app/api/utils/auth";
 

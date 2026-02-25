@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/superbase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { validateSubmitRating } from '@/lib/validators/ratings'
 import { Rating } from '@/lib/db/types'

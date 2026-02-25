@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/superbase/server'
+import { createClient } from '@/lib/supabase/server'
 import { errorResponse, successResponse } from '@/lib/api-utils'
-import { fetchUserStatsCached } from '@/lib/queries/user'
+import { fetchUserStatsCached } from '@/lib/queries/users'
 
 /**
  * GET /api/users/[id]/stats
