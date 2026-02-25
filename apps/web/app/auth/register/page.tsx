@@ -42,10 +42,27 @@ export const dynamic = "force-dynamic";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [serverError, setServerError] = useState("");
+  const [error, setError] = useState<string | undefined>("");
 
-  const { isConnected, publicKey: walletPublicKey, connect, isInitializing } =
-    useWallet();
+  let isConnected: boolean;
+  let walletPublicKey: string | null;
+  let connect: () => Promise<void>;
+  let isWalletConnecting: boolean;
+
+  try {
+    const wallet = useWallet();
+    isConnected = wallet.isConnected;
+    walletPublicKey = wallet.publicKey;
+    connect = wallet.connect;
+    isWalletConnecting = wallet.isInitializing;
+  } catch {
+    isConnected = false;
+    walletPublicKey = null;
+    connect = async () => {};
+    isWalletConnecting = false;
+  }
+
+  const supabase = createClient();
 
   const {
     register,
@@ -55,7 +72,15 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    mode: "onChange",
+    // FIX 1: Only validate on submit, not on every keystroke.
+    mode: "onSubmit",
+    // FIX 2: All fields start as empty strings, not undefined.
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      walletAddress: "",
+    },
   });
 
   const walletAddress = watch("walletAddress");
@@ -74,40 +99,50 @@ export default function RegisterPage() {
       setServerError("Failed to connect wallet. Is Freighter installed?");
     }
   };
+  // FIX 3: shouldValidate: false so connecting a wallet doesn't trigger
+  useEffect(() => {
+    if (walletPublicKey) {
+      setValue("walletAddress", walletPublicKey, { shouldValidate: false });
+    }
+  }, [walletPublicKey, setValue]);
 
   const onSubmit = async (data: RegisterFormData) => {
-    setServerError("");
-
-    const payload: Record<string, string> = {
-      public_key: data.walletAddress,
-      username: data.username,
-    };
-    if (data.email) payload.email = data.email;
-
+    setError("");
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            username: data.username,
+            wallet_address: data.walletAddress,
+          },
+        },
       });
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        // Extract the human-readable error message from either response shape
-        const msg =
-          typeof json?.error === "string"
-            ? json.error
-            : (json?.error?.message ?? "Registration failed. Please try again.");
-        setServerError(msg);
+      if (authError) {
+        setError(authError.message);
         return;
       }
 
-      // Server set auth-token cookie → redirect straight to dashboard
-      router.push("/dashboard");
-      router.refresh();
+      if (authData.user) {
+        const { error: profileError } = await supabase.from("profiles").insert({
+          id: authData.user.id,
+          username: data.username,
+          email: data.email,
+          wallet_address: data.walletAddress,
+        });
+
+        if (profileError) {
+          setError(profileError.message);
+          return;
+        }
+
+        router.push("/dashboard");
+        router.refresh();
+      }
     } catch {
-      setServerError("Network error. Please check your connection and try again.");
+      setError("Something went wrong");
     }
   };
 
@@ -194,28 +229,52 @@ export default function RegisterPage() {
               register={register("email")}
             />
 
-            <FormError message={serverError} />
+              <AuthInput
+                id="password"
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                error={errors.password?.message}
+                register={register("password")}
+              />
+              {/*
+                FIX 4: Register walletAddress as a hidden input so react-hook-form
+                actually tracks the field. Without this, the field is unknown to RHF
+                and its value stays `undefined` in the form state — causing Zod to
+                throw "expected string, received undefined" on any validation pass.
+              */}
+              <input type="hidden" {...register("walletAddress")} />
 
-            <AuthButton
-              type="submit"
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
-            >
-              Create Account
-            </AuthButton>
-          </form>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Wallet Connection
+                </label>
+                <button
+                  type="button"
+                  onClick={connectWallet}
+                  disabled={isWalletConnecting || isConnected}
+                  className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                >
+                  <Wallet className="h-4 w-4" />
+                  {walletAddress
+                    ? `Connected: ${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`
+                    : isWalletConnecting
+                      ? "Connecting..."
+                      : "Connect Freighter Wallet"}
+                </button>
+                {errors.walletAddress && (
+                  <p className="text-sm text-red-600">{errors.walletAddress.message}</p>
+                )}
+              </div>
+
+              <FormError message={error} />
+
+              <AuthButton type="submit" isLoading={isSubmitting}>
+                Create Account
+              </AuthButton>
+            </form>
+          </div>
         </div>
-
-        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-          By creating an account you agree to our{" "}
-          <Link
-            href="/terms"
-            className="underline hover:text-gray-700 dark:hover:text-gray-200"
-          >
-            Terms of Service
-          </Link>
-          .
-        </p>
       </div>
     </div>
   );
