@@ -1,11 +1,8 @@
-'use client'
-
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import EditProfileForm from "@/components/profile/EditProfileForm";
 import Image from "next/image";
-import { useState } from "react";
-import { useRouter } from "next/router";
+
 export default async function EditProfilePage() {
   const supabase = await createClient();
 
@@ -36,13 +33,7 @@ export default async function EditProfilePage() {
     );
   }
 
-  const router = useRouter();
-  const [username, setUsername] = useState(user.username || "");
-  const [email, setEmail] = useState(user.email || "");
-  const [bio, setBio] = useState(user.bio || "");
-  const [avatarUrl, _setAvatarUrl] = useState(user.avatar_url || null);
-  const [uploading, _setUploading] = useState(false);
-  const [saving, _setSaving] = useState(false);
+  const { username, email, bio, avatar_url: avatarUrl } = user;
   const handleSave = async (updatedData: { username: string; email: string; bio: string; avatarUrl: string | null }) => {
     // Implement profile update logic here, e.g. call an API route to update the user profile in the database
     console.log("Saving profile with data:", updatedData);
