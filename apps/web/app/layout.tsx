@@ -8,7 +8,6 @@ import WalletProvider from "@/providers/WalletProvider";
 import AuthProvider from "@/providers/AuthProvider";
 import FavoritesProvider from "@/components/FavoritesProvider";
 import ComparisonProvider from "@/components/ComparisonProvider";
-import ComparisonBar from "@/components/ComparisonBar";
 import NotificationProvider from "@/providers/NotificationProvider";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { ToastProvider } from "@/contexts/ToastContext";
@@ -16,6 +15,8 @@ import { ToastSystem } from "@/components/ToastSystem";
 import dynamic from "next/dynamic";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { Toaster } from "react-hot-toast";
+import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
 import "./globals.css";
 import "@fontsource-variable/inter";
 
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Preconnect to Google Fonts for faster load */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -116,10 +117,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     color: "hsl(var(--destructive-foreground))",
                   },
                 },
-              }}
-            />
-          </ErrorProvider>
-        </ThemeProvider>
+              },
+            }}
+          />
+        </ErrorProvider>
       </body>
     </html>
   );
