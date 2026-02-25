@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/superbase/server'
-import { createAdminClient } from '@/lib/superbase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 export async function GET(

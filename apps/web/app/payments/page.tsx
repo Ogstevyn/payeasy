@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { createClient } from '@/lib/superbase/client'
+import { createClient } from '@/lib/supabase/client'
 import {
     CreditCard,
     CheckCircle2,
