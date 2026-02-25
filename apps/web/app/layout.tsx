@@ -9,6 +9,8 @@ import WalletProvider from "@/providers/WalletProvider";
 import AuthProvider from "@/providers/AuthProvider";
 import FavoritesProvider from "@/components/FavoritesProvider";
 import ComparisonProvider from "@/components/ComparisonProvider";
+import NotificationProvider from "@/providers/NotificationProvider";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import dynamic from 'next/dynamic';
 import { AnalyticsTracker } from '@/components/AnalyticsTracker';
 import { Toaster } from 'react-hot-toast';
@@ -54,8 +56,11 @@ export default function RootLayout({
                 <AuthProvider>
                   <FavoritesProvider>
                     <ComparisonProvider>
-                      {children}
-                      <ComparisonBar />
+                      <NotificationProvider>
+                        {children}
+                        <ComparisonBar />
+                        <NotificationCenter />
+                      </NotificationProvider>
                     </ComparisonProvider>
                   </FavoritesProvider>
                 </AuthProvider>
