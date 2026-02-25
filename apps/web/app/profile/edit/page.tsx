@@ -1,8 +1,11 @@
+'use client'
+
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import EditProfileForm from "@/components/profile/EditProfileForm";
 import Image from "next/image";
-
+import { useState } from "react";
+import { useRouter } from "next/router";
 export default async function EditProfilePage() {
   const supabase = await createClient();
 
@@ -33,7 +36,13 @@ export default async function EditProfilePage() {
     );
   }
 
-  const { username, email, bio, avatar_url: avatarUrl } = user;
+  const router = useRouter();
+  const [username, setUsername] = useState(user.username || "");
+  const [email, setEmail] = useState(user.email || "");
+  const [bio, setBio] = useState(user.bio || "");
+  const [avatarUrl, _setAvatarUrl] = useState(user.avatar_url || null);
+  const [uploading, _setUploading] = useState(false);
+  const [saving, _setSaving] = useState(false);
   const handleSave = async (updatedData: { username: string; email: string; bio: string; avatarUrl: string | null }) => {
     // Implement profile update logic here, e.g. call an API route to update the user profile in the database
     console.log("Saving profile with data:", updatedData);
@@ -49,6 +58,7 @@ export default async function EditProfilePage() {
   return (
     <main className="p-6 max-w-3xl mx-auto">
       <h1 id="edit-profile-heading" className="text-2xl font-semibold mb-4">Edit Profile</h1>
+      <form onSubmit={()=>handleSave({ username, email, bio, avatarUrl })} aria-labelledby="edit-profile-heading" className="grid gap-4 md:grid-cols-2">
       <form onSubmit={()=>handleSave({ username, email, bio, avatarUrl })} aria-labelledby="edit-profile-heading" className="grid gap-4 md:grid-cols-2">
         <label className="block md:col-span-1">
           <div className="text-sm text-gray-300">Username</div>
@@ -97,6 +107,7 @@ export default async function EditProfilePage() {
 
       <EditProfileForm user={user} />
     </div>
+    </main>
     </main>
   );
 }
