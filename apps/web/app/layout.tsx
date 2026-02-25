@@ -1,7 +1,5 @@
 import "../lib/env";
 import type { Metadata } from "next";
-import { Inter } from "@fontsource-variable/inter";
-import { ThemeProvider } from "@/lib/theme/provider";
 import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
 import { ErrorProvider } from "@/components/providers/ErrorProvider";
 import NextTopLoader from 'nextjs-toploader';
@@ -16,6 +14,8 @@ import { AnalyticsTracker } from '@/components/AnalyticsTracker';
 import { Toaster } from 'react-hot-toast';
 import "./globals.css";
 import "@fontsource-variable/inter";
+import { ThemeProvider } from "@/lib/theme/provider";
+import ProtectedRoute from "@/components/protectedRoute";
 
 // Dynamically import ComparisonBar to reduce initial bundle size
 const ComparisonBar = dynamic(() => import("@/components/ComparisonBar"), { 
@@ -44,9 +44,10 @@ export default function RootLayout({
         >
           {/* Global error boundary - wraps everything inside ThemeProvider */}
           <ErrorProvider>
+            <ProtectedRoute>
             {/* Loading bar at the top */}
             <NextTopLoader color="#7D00FF" showSpinner={false} />
-            
+
             {/* Analytics tracking */}
             <AnalyticsTracker />
             
@@ -91,6 +92,7 @@ export default function RootLayout({
                 },
               }}
             />
+              </ProtectedRoute>
           </ErrorProvider>
         </ThemeProvider>
       </body>
