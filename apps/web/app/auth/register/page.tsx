@@ -32,10 +32,9 @@ export default function RegisterPage() {
     connect = wallet.connect;
     isWalletConnecting = wallet.isInitializing;
   } catch {
-    // During build, provider might not be available
     isConnected = false;
     walletPublicKey = null;
-    connect = async () => { };
+    connect = async () => {};
     isWalletConnecting = false;
   }
 
@@ -49,7 +48,15 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    mode: "onChange",
+    // FIX 1: Only validate on submit, not on every keystroke.
+    mode: "onSubmit",
+    // FIX 2: All fields start as empty strings, not undefined.
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      walletAddress: "",
+    },
   });
 
   const walletAddress = watch("walletAddress");
@@ -61,18 +68,16 @@ export default function RegisterPage() {
       setError("Failed to connect wallet");
     }
   };
-
-  // Sync wallet public key into form when it changes
+  // FIX 3: shouldValidate: false so connecting a wallet doesn't trigger
   useEffect(() => {
     if (walletPublicKey) {
-      setValue("walletAddress", walletPublicKey);
+      setValue("walletAddress", walletPublicKey, { shouldValidate: false });
     }
   }, [walletPublicKey, setValue]);
 
   const onSubmit = async (data: RegisterFormData) => {
     setError("");
     try {
-      // 1. Sign up user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -90,7 +95,6 @@ export default function RegisterPage() {
       }
 
       if (authData.user) {
-        // 2. Create profile
         const { error: profileError } = await supabase.from("profiles").insert({
           id: authData.user.id,
           username: data.username,
@@ -106,7 +110,7 @@ export default function RegisterPage() {
         router.push("/dashboard");
         router.refresh();
       }
-    } catch (e) {
+    } catch {
       setError("Something went wrong");
     }
   };
@@ -164,6 +168,13 @@ export default function RegisterPage() {
                 error={errors.password?.message}
                 register={register("password")}
               />
+              {/*
+                FIX 4: Register walletAddress as a hidden input so react-hook-form
+                actually tracks the field. Without this, the field is unknown to RHF
+                and its value stays `undefined` in the form state — causing Zod to
+                throw "expected string, received undefined" on any validation pass.
+              */}
+              <input type="hidden" {...register("walletAddress")} />
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
