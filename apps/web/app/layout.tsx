@@ -15,6 +15,8 @@ import { ToastSystem } from "@/components/ToastSystem";
 import dynamic from "next/dynamic";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { Toaster } from "react-hot-toast";
+import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
 import "./globals.css";
 import "@fontsource-variable/inter";
 
@@ -23,7 +25,6 @@ const ComparisonBar = dynamic(() => import("@/components/ComparisonBar"), {
   ssr: false,
   loading: () => null, // Don't show anything while loading
 });
-
 export const metadata: Metadata = {
   title: "PayEasy | Shared Rent on Stellar",
   description: "Secure, blockchain-powered rent sharing.",
@@ -32,6 +33,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preconnect to Google Fonts for faster load */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Plus Jakarta Sans — display/brand headings */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-screen bg-white font-sans text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-white">
         <ThemeProvider
           attribute="class"
@@ -54,6 +65,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <FavoritesProvider>
                     <ComparisonProvider>
                       <NotificationProvider>
+                        {/* Header - visible on all pages */}
+                        <Header sticky isAuthenticated userName="User" />
+
+                        {/* Sidebar - app-wide navigation */}
+                        <Sidebar />
                         <ToastProvider>
                           {children}
                           <ComparisonBar />
