@@ -9,6 +9,13 @@
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 0, 0, 0;
   --background-end-rgb: 0, 0, 0;
+  --sidebar-width: 0px; /* updated by client when sidebar mounts */
+}
+
+@media (min-width: 768px) {
+  :root {
+    --sidebar-width: 16rem; /* default desktop width (w-64) */
+  }
 }
 
 body {

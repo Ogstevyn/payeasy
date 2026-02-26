@@ -43,7 +43,7 @@ export function ThemeToggle() {
     <div id="theme-dropdown" className="relative z-50 inline-block text-left">
       <button
         onClick={toggleDropdown}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-500 transition-colors hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-100 dark:focus:ring-offset-slate-950"
+        className="focus:ring-primary flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-500 transition-colors hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-100 dark:focus:ring-offset-slate-950"
         aria-label="Toggle theme"
         aria-expanded={isOpen}
         aria-haspopup="true"
@@ -73,10 +73,11 @@ export function ThemeToggle() {
                 setTheme("light");
                 closeDropdown();
               }}
-              className={`flex w-full items-center px-4 py-2 text-sm ${theme === "light"
-                ? "bg-gray-100 text-primary dark:bg-slate-800"
-                : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-800"
-                }`}
+              className={`flex w-full items-center px-4 py-2 text-sm ${
+                theme === "light"
+                  ? "text-primary bg-gray-100 dark:bg-slate-800"
+                  : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-800"
+              }`}
               role="menuitem"
             >
               <Sun size={16} className="mr-2" />
@@ -87,10 +88,11 @@ export function ThemeToggle() {
                 setTheme("dark");
                 closeDropdown();
               }}
-              className={`flex w-full items-center px-4 py-2 text-sm ${theme === "dark"
-                ? "bg-gray-100 text-primary dark:bg-slate-800"
-                : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-800"
-                }`}
+              className={`flex w-full items-center px-4 py-2 text-sm ${
+                theme === "dark"
+                  ? "text-primary bg-gray-100 dark:bg-slate-800"
+                  : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-800"
+              }`}
               role="menuitem"
             >
               <Moon size={16} className="mr-2" />
@@ -101,10 +103,11 @@ export function ThemeToggle() {
                 setTheme("system");
                 closeDropdown();
               }}
-              className={`flex w-full items-center px-4 py-2 text-sm ${theme === "system"
-                ? "bg-gray-100 text-primary dark:bg-slate-800"
-                : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-800"
-                }`}
+              className={`flex w-full items-center px-4 py-2 text-sm ${
+                theme === "system"
+                  ? "text-primary bg-gray-100 dark:bg-slate-800"
+                  : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-800"
+              }`}
               role="menuitem"
             >
               <Monitor size={16} className="mr-2" />
