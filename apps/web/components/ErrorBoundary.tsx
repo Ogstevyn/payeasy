@@ -102,7 +102,7 @@ class ErrorBoundary extends Component<Props, State> {
               {title}
             </h2>
             <p className="mb-6 text-gray-600 dark:text-gray-400">
-              We've been notified and are looking into it.
+              {"We've been notified and are looking into it."}
             </p>
             <button
               onClick={this.handleReset}

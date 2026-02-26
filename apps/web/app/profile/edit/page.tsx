@@ -96,7 +96,7 @@ export default async function EditProfilePage() {
       </div>
 
       <EditProfileForm user={user} />
-    </div>
+      </div>
     </main>
   );
 }

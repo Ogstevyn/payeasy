@@ -1,9 +1,20 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { runAuthMiddleware } from "./middleware/middleware";
 import { getSecurityHeaders, CSP_REPORT_PATH } from "@/lib/security/headers";
 import { logger } from "./lib/logging/logger";
 import { monitoring } from "./lib/monitoring/sentry";
+
+// ---- Protected routes config ----
+const PROTECTED_ROUTES = [
+  "/dashboard",
+  "/profile",
+  "/listings/create",
+  "/messages",
+];
+
+const isProtectedRoute = (pathname: string) =>
+  PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 
 export async function middleware(request: NextRequest) {
   const start = Date.now();
@@ -38,7 +49,7 @@ export async function middleware(request: NextRequest) {
     // Ensure response carries request ID
     response.headers.set("X-Request-ID", requestId);
 
-    // ---- Supabase session refresh + dashboard protection ----
+    // ---- Supabase session refresh + route protection ----
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -68,10 +79,25 @@ export async function middleware(request: NextRequest) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user && pathname.startsWith("/dashboard")) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/auth/login";
-        return NextResponse.redirect(url);
+      // ---- Redirect unauthenticated users away from protected routes ----
+      if (!user && isProtectedRoute(pathname)) {
+        logger.warn(
+          { requestId, pathname, ip },
+          "Unauthenticated access attempt to protected route"
+        );
+
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = "/auth/login";
+        loginUrl.searchParams.set("callbackUrl", pathname); // preserve intended destination
+        return NextResponse.redirect(loginUrl);
+      }
+
+      // ---- Redirect authenticated users away from auth pages ----
+      if (user && pathname.startsWith("/auth/")) {
+        const homeUrl = request.nextUrl.clone();
+        homeUrl.pathname = "/dashboard";
+        homeUrl.searchParams.delete("callbackUrl");
+        return NextResponse.redirect(homeUrl);
       }
     }
 
