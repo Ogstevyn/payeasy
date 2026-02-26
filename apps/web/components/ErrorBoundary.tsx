@@ -101,75 +101,9 @@ class ErrorBoundary extends Component<Props, State> {
             )}>
               {title}
             </h2>
-<<<<<<< HEAD
-
-            <p className={cn(
-              'text-lg leading-relaxed',
-              'text-gray-700 dark:text-gray-300'
-            )}>
-              {description}
-=======
             <p className="mb-6 text-gray-600 dark:text-gray-400">
               {"We've been notified and are looking into it."}
->>>>>>> 53c2fc1 (fix: update error message formatting in ErrorBoundary and adjust notification preference keys)
             </p>
-
-            {/* Error details (development only) */}
-            {shouldShowDetails && this.state.error && (
-              <details className={cn(
-                'rounded-lg bg-red-50/50 dark:bg-red-950/20',
-                'border border-red-200 dark:border-red-900/50',
-                'p-4 text-left w-full',
-                'cursor-pointer'
-              )}>
-                <summary className="mb-3 font-semibold text-red-700 dark:text-red-300 select-none">
-                  Error details (development only)
-                </summary>
-                <div className="space-y-2 text-xs">
-                  <div>
-                    <p className="font-mono font-bold text-red-600 dark:text-red-400">
-                      {this.state.error.name}
-                    </p>
-                    <code className={cn(
-                      'block whitespace-pre-wrap break-words',
-                      'text-red-600 dark:text-red-400',
-                      'mt-1'
-                    )}>
-                      {this.state.error.message}
-                    </code>
-                  </div>
-                  {this.state.error.stack && (
-                    <pre className={cn(
-                      'overflow-auto bg-white/50 dark:bg-gray-800/50',
-                      'rounded p-2 text-xs leading-relaxed',
-                      'text-red-600 dark:text-red-400 font-mono',
-                      'max-h-48'
-                    )}>
-                      {this.state.error.stack}
-                    </pre>
-                  )}
-                </div>
-              </details>
-            )}
-
-            {/* Help text */}
-            <div className={cn(
-              'rounded-lg bg-white/50 dark:bg-gray-800/50',
-              'border border-gray-200 dark:border-gray-700',
-              'p-4 sm:p-5 text-sm',
-              'backdrop-blur-sm'
-            )}>
-              <p className="text-gray-700 dark:text-gray-300">
-                Try refreshing the page or contact support if the problem persists.
-              </p>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className={cn(
-            'mt-10 flex flex-col gap-3 w-full max-w-xs',
-            'sm:flex-row sm:justify-center sm:max-w-sm'
-          )}>
             <button
               onClick={this.handleReset}
               className={cn(

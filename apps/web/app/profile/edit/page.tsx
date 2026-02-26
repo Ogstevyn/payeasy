@@ -50,7 +50,6 @@ export default async function EditProfilePage() {
     <main className="p-6 max-w-3xl mx-auto">
       <h1 id="edit-profile-heading" className="text-2xl font-semibold mb-4">Edit Profile</h1>
       <form onSubmit={()=>handleSave({ username, email, bio, avatarUrl })} aria-labelledby="edit-profile-heading" className="grid gap-4 md:grid-cols-2">
-      <form onSubmit={()=>handleSave({ username, email, bio, avatarUrl })} aria-labelledby="edit-profile-heading" className="grid gap-4 md:grid-cols-2">
         <label className="block md:col-span-1">
           <div className="text-sm text-gray-300">Username</div>
           <input id="username" value={username} className="mt-1 w-full rounded-md px-3 py-2 bg-gray-800 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -97,8 +96,7 @@ export default async function EditProfilePage() {
       </div>
 
       <EditProfileForm user={user} />
-    </div>
-    </main>
+      </div>
     </main>
   );
 }
