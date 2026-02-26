@@ -1,3 +1,15 @@
+// Icon Components
+export {
+  Icon,
+  type IconProps,
+  type IconSize,
+} from './Icon'
+
+export {
+  type IconName,
+  ICON_NAMES,
+} from './icons'
+
 // Card Components
 export {
   Card,
