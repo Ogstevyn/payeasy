@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createListingSchema } from "@/lib/validators/listing";
 import { successResponse, handleError } from "@/app/api/utils/response";
+import { invalidateListingsCache } from "@/lib/redis";
 
 /**
  * GET /api/listings
@@ -136,6 +137,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    // Invalidate cache after creating new listing
+    await invalidateListingsCache();
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
