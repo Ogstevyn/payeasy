@@ -1,5 +1,6 @@
 import "../lib/env";
 import type { Metadata } from "next";
+import { ThemeProvider } from "@/lib/theme/provider";
 import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
 import { ErrorProvider } from "@/components/providers/ErrorProvider";
 import NextTopLoader from "nextjs-toploader";
@@ -9,6 +10,8 @@ import FavoritesProvider from "@/components/FavoritesProvider";
 import ComparisonProvider from "@/components/ComparisonProvider";
 import NotificationProvider from "@/providers/NotificationProvider";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { ToastProvider } from "@/contexts/ToastContext";
+import { ToastSystem } from "@/components/ToastSystem";
 import dynamic from "next/dynamic";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { Toaster } from "react-hot-toast";
@@ -18,7 +21,7 @@ import "./globals.css";
 import "@fontsource-variable/inter";
 
 // Dynamically import ComparisonBar to reduce initial bundle size
-const DynamicComparisonBar = dynamic(() => import("@/components/ComparisonBar"), {
+const ComparisonBar = dynamic(() => import("@/components/ComparisonBar"), {
   ssr: false,
   loading: () => null, // Don't show anything while loading
 });
@@ -41,65 +44,71 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-white font-sans text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-white">
-        {/* Global error boundary - wraps everything inside ThemeProvider */}
-        <ErrorProvider>
-          {/* Loading bar at the top */}
-          <NextTopLoader color="#7D00FF" showSpinner={false} />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {/* Global error boundary - wraps everything inside ThemeProvider */}
+          <ErrorProvider>
+            {/* Loading bar at the top */}
+            <NextTopLoader color="#7D00FF" showSpinner={false} />
 
-          {/* Analytics tracking */}
-          <AnalyticsTracker />
+            {/* Analytics tracking */}
+            <AnalyticsTracker />
 
-          {/* Core providers */}
-          <ServiceWorkerProvider>
-            <WalletProvider>
-              <AuthProvider>
-                <FavoritesProvider>
-                  <ComparisonProvider>
-                    <NotificationProvider>
-                      {/* Header - visible on all pages */}
-                      <Header sticky isAuthenticated userName="User" />
+            {/* Core providers */}
+            <ServiceWorkerProvider>
+              <WalletProvider>
+                <AuthProvider>
+                  <FavoritesProvider>
+                    <ComparisonProvider>
+                      <NotificationProvider>
+                        {/* Header - visible on all pages */}
+                        <Header sticky isAuthenticated userName="User" />
 
-                      {/* Sidebar - app-wide navigation */}
-                      <Sidebar />
+                        {/* Sidebar - app-wide navigation */}
+                        <Sidebar />
+                        <ToastProvider>
+                          {children}
+                          <ComparisonBar />
+                          <NotificationCenter />
+                          <ToastSystem />
+                        </ToastProvider>
+                      </NotificationProvider>
+                    </ComparisonProvider>
+                  </FavoritesProvider>
+                </AuthProvider>
+              </WalletProvider>
+            </ServiceWorkerProvider>
 
-                      {/* Main content - full width; sidebar overlays content on desktop */}
-                      <main className="min-h-screen w-full">
-                        {children}
-                        <DynamicComparisonBar />
-                      </main>
-                      <NotificationCenter />
-                    </NotificationProvider>
-                  </ComparisonProvider>
-                </FavoritesProvider>
-              </AuthProvider>
-            </WalletProvider>
-          </ServiceWorkerProvider>
-
-          {/* Toast notifications with theme-aware styling */}
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: "hsl(var(--background))",
-                color: "hsl(var(--foreground))",
-                border: "1px solid hsl(var(--border))",
-              },
-              success: {
+            {/* Toast notifications with theme-aware styling */}
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                duration: 4000,
                 style: {
-                  background: "hsl(var(--success))",
-                  color: "hsl(var(--success-foreground))",
+                  background: "hsl(var(--background))",
+                  color: "hsl(var(--foreground))",
+                  border: "1px solid hsl(var(--border))",
                 },
-              },
-              error: {
-                style: {
-                  background: "hsl(var(--destructive))",
-                  color: "hsl(var(--destructive-foreground))",
+                success: {
+                  style: {
+                    background: "hsl(var(--success))",
+                    color: "hsl(var(--success-foreground))",
+                  },
                 },
-              },
-            }}
-          />
-        </ErrorProvider>
+                error: {
+                  style: {
+                    background: "hsl(var(--destructive))",
+                    color: "hsl(var(--destructive-foreground))",
+                  },
+                },
+              }}
+            />
+          </ErrorProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
