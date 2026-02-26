@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.payeasy.app",
+        "paths": [
+          "/api/deeplink*",
+          "/dashboard*",
+          "/pay*"
+        ]
+      }
+    ]
+  }
+}

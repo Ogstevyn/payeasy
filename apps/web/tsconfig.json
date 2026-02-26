@@ -44,8 +44,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "lib/dauth.ts"
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
