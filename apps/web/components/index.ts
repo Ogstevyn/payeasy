@@ -3,12 +3,17 @@ export {
   Icon,
   type IconProps,
   type IconSize,
+  type IconAnimationVariant,
 } from './Icon'
 
 export {
   type IconName,
   ICON_NAMES,
 } from './icons'
+
+export {
+  IconShowcase,
+} from './icons/IconShowcase'
 
 // Card Components
 export {

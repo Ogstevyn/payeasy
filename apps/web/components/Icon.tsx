@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { ICON_REGISTRY, type IconName } from "./icons";
 
 export type IconSize = "sm" | "md" | "lg" | number;
+export type IconAnimationVariant = "hover" | "pulse" | "spin";
 
 const SIZE_MAP = {
   sm: 16,
@@ -16,7 +17,14 @@ export type IconProps = Omit<SVGProps<SVGSVGElement>, "color"> & {
   size?: IconSize;
   color?: string;
   animate?: boolean;
+  animationVariant?: IconAnimationVariant;
   title?: string;
+};
+
+const ANIMATION_MAP: Record<IconAnimationVariant, string> = {
+  hover: "transition-transform duration-200 ease-out motion-safe:hover:scale-105",
+  pulse: "motion-safe:animate-pulse",
+  spin: "motion-safe:animate-spin",
 };
 
 const BaseIcon = forwardRef<SVGSVGElement, IconProps>(function Icon(
@@ -25,6 +33,7 @@ const BaseIcon = forwardRef<SVGSVGElement, IconProps>(function Icon(
     size = "md",
     color = "currentColor",
     animate = false,
+    animationVariant = "hover",
     title,
     className,
     ...rest
@@ -34,6 +43,7 @@ const BaseIcon = forwardRef<SVGSVGElement, IconProps>(function Icon(
   const Component = ICON_REGISTRY[name];
   const resolvedSize = typeof size === "number" ? size : SIZE_MAP[size];
   const isDecorative = !title;
+  const animationClass = animate ? ANIMATION_MAP[animationVariant] : undefined;
 
   return (
     <Component
@@ -44,7 +54,7 @@ const BaseIcon = forwardRef<SVGSVGElement, IconProps>(function Icon(
       color={color}
       className={cn(
         "inline-block shrink-0",
-        animate && "transition-transform duration-200 ease-out motion-safe:hover:scale-105",
+        animationClass,
         className
       )}
       aria-hidden={isDecorative}
