@@ -401,24 +401,28 @@ jobs:
               vulnCount: '${{ needs.analyze-dependencies.outputs.vulnerability-count }}'
             };
             
-            const icon = (status) => status === 'success' ? '✅' : '⚠️';
+            const icon = (s) => s === 'success' ? '✅' : '⚠️';
             
-            const comment = `## 🔒 Security Scan Results
-
-| Scanner | Result |
-|---------|--------|
-| CodeQL | ${icon(results.codeql)} |
-| Snyk | ${icon(results.snyk)} |
-| Semgrep | ${icon(results.semgrep)} |
-| Container | ${icon(results.trivy)} |
-
-**Vulnerabilities**: ${results.vulnCount}
-**Patch Status**: ${results.patches === 'success' ? '✅' : '⚠️'}
-
-[View Details](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/security)`;
+            const rows = [
+              ['CodeQL', icon(results.codeql)],
+              ['Snyk', icon(results.snyk)],
+              ['Semgrep', icon(results.semgrep)],
+              ['Container', icon(results.trivy)],
+            ].map(([name, status]) => `${name} | ${status}`).join('\n');
+            
+            const comment = [
+              '## 🔒 Security Scan Results',
+              'Scanner | Result',
+              '---------|--------',
+              rows,
+              '',
+              `**Vulnerabilities**: ${results.vulnCount}`,
+              `**Patch Status**: ${results.patches === 'success' ? '✅' : '⚠️'}`,
+              `[View Details](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/security)`
+            ].join('\n');
             
             if (context.issue?.number) {
-              github.rest.issues.createComment({
+              await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
