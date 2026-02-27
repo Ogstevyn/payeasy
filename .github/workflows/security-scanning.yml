@@ -1,8 +1,4 @@
- name: Security Scanning, DAST & Dependency Verification
-
-env:
-  NODE_VERSION: '18'
-  REGISTRY_URL: 'https://staging.payeasy.app'
+name: Security Scanning, DAST & Dependency Verification
 
 on:
   push:
@@ -25,6 +21,10 @@ on:
         description: 'Target URL for DAST scan'
         required: false
         default: 'https://staging.payeasy.app'
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY_URL: 'https://staging.payeasy.app'
 
 permissions:
   contents: read
