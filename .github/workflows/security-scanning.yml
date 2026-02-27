@@ -72,6 +72,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            apps/web/package-lock.json
 
       - run: npm ci && cd apps/web && npm ci && cd ../..
 
@@ -142,6 +145,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            apps/web/package-lock.json
 
       - run: npm ci && cd apps/web && npm ci && cd ../..
 
@@ -210,6 +216,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            apps/web/package-lock.json
 
       - id: check
         if: steps.files.outputs.any_changed == 'true' || github.event_name == 'schedule'
@@ -234,6 +243,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            apps/web/package-lock.json
 
       - run: npm ci && cd apps/web && npm ci || true
 
