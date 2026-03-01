@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerClient } from "@/lib/supabase/server";
 import type { ListingSearchParams, ListingSearchResult } from "@/lib/db/types";
 import { successResponse, errorResponse, handleError } from "@/app/api/utils";
+import {
+  getCachedSearch,
+  setCachedSearch,
+  createSearchHash,
+} from "@/lib/redis";
 
 // Mock data generation function
 const generateMockListings = (count: number = 25) => {
@@ -181,6 +186,23 @@ export async function GET(request: NextRequest) {
       return mockDataResponse(params);
     }
 
+    // Check cache first
+    const searchHash = createSearchHash(params);
+    const cachedResult = await getCachedSearch(searchHash);
+    
+    if (cachedResult) {
+      console.log(`Cache HIT for search: ${searchHash}`);
+      return NextResponse.json(cachedResult, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, max-age=900',
+          'X-Cache': 'HIT',
+        },
+      });
+    }
+
+    console.log(`Cache MISS for search: ${searchHash}`);
+
     // Build and execute query
     const query = buildQuery(supabase, params);
     const { data: listings, error, count } = await query;
@@ -193,12 +215,23 @@ export async function GET(request: NextRequest) {
 
     // If no results, return empty array with pagination info
     if (!listings || listings.length === 0) {
-      return successResponse({
+      const emptyResult = {
         listings: [],
         total: 0,
         page: params.page!,
         limit: params.limit!,
         totalPages: 0,
+      };
+      
+      // Cache empty results too
+      await setCachedSearch(searchHash, emptyResult);
+      
+      return NextResponse.json(emptyResult, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, max-age=900',
+          'X-Cache': 'MISS',
+        },
       });
     }
 
@@ -222,7 +255,16 @@ export async function GET(request: NextRequest) {
       totalPages,
     };
 
-    return successResponse(result);
+    // Cache the result
+    await setCachedSearch(searchHash, result);
+
+    return NextResponse.json(result, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, max-age=900',
+        'X-Cache': 'MISS',
+      },
+    });
   } catch (err) {
     console.error("Unexpected error in listings API:", err);
     return handleError(err, requestId);

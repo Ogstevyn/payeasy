@@ -2,6 +2,12 @@ import { createClient } from '@/lib/supabase/server'
 import { successResponse, errorResponse } from '@/lib/api-utils'
 import { listingUpdateSchema } from '@/lib/types/validation'
 import { z } from 'zod'
+import {
+  getCachedListingDetail,
+  setCachedListingDetail,
+  invalidateListingDetail,
+  invalidateListingsCache,
+} from '@/lib/redis'
 
 const amenitiesSchema = z
   .array(z.string().min(1).max(50))
@@ -13,8 +19,26 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // MOCK DATA MODE - Database connection bypassed
   const { id: listingId } = await params
+  
+  // Check cache first
+  const cachedListing = await getCachedListingDetail(listingId);
+  
+  if (cachedListing) {
+    console.log(`Cache HIT for listing: ${listingId}`);
+    return new Response(JSON.stringify(cachedListing), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=900',
+        'X-Cache': 'HIT',
+      },
+    });
+  }
+
+  console.log(`Cache MISS for listing: ${listingId}`);
+
+  // MOCK DATA MODE - Database connection bypassed
   const mockListing = {
     id: listingId,
     title: "Luxury Downtown Apartment with City Views",
@@ -56,7 +80,17 @@ export async function GET(
   // Simulate network latency
   await new Promise(resolve => setTimeout(resolve, 800));
 
-  return successResponse(mockListing)
+  // Cache the result
+  await setCachedListingDetail(listingId, mockListing);
+
+  return new Response(JSON.stringify(mockListing), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=900',
+      'X-Cache': 'MISS',
+    },
+  });
 }
 
 /** PUT — Update a listing (owner only) */
@@ -191,10 +225,16 @@ export async function PUT(
     .select('amenity')
     .eq('listing_id', listingId)
 
-  return successResponse({
+  const responseData = {
     ...updatedListing,
     amenities: (currentAmenities || []).map((a) => a.amenity),
-  })
+  }
+
+  // Invalidate cache after update
+  await invalidateListingDetail(listingId)
+  await invalidateListingsCache()
+
+  return successResponse(responseData)
 }
 
 /** DELETE — Soft-delete a listing (owner only) */
@@ -256,6 +296,10 @@ export async function DELETE(
     .from('listing_amenities')
     .delete()
     .eq('listing_id', listingId)
+
+  // Invalidate cache after deletion
+  await invalidateListingDetail(listingId)
+  await invalidateListingsCache()
 
   return successResponse({
     ...deletedListing,

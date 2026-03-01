@@ -12,26 +12,20 @@ import AuthButton from "@/components/forms/AuthButton";
 import AuthInput from "@/components/forms/AuthInput";
 import FormError from "@/components/forms/FormError";
 import { useWallet } from "@/hooks/useWallet";
+import { createClient } from "@/lib/supabase/client";
+import { 
+  usernameSchema, 
+  emailSchema, 
+  passwordSchema, 
+  stellarPublicKeySchema 
+} from "@/lib/validation/input";
 
-// ── Inline schema (no password needed – wallet IS the auth factor) ─────────
+// ── Registration schema using validated schemas for security ─────────
 const registerSchema = z.object({
-  username: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .max(20, "Username must be at most 20 characters")
-    .regex(
-      /^[a-zA-Z0-9_-]+$/,
-      "Username may only contain letters, numbers, underscores, or hyphens"
-    ),
-  email: z
-    .string()
-    .max(254)
-    .email("Enter a valid email address")
-    .optional()
-    .or(z.literal("")),
-  walletAddress: z
-    .string()
-    .regex(/^G[A-Z2-7]{55}$/, "Connect your Freighter wallet to continue"),
+  username: usernameSchema,
+  email: emailSchema.optional().or(z.literal("")),
+  password: passwordSchema,
+  walletAddress: stellarPublicKeySchema,
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -96,15 +90,9 @@ export default function RegisterPage() {
     try {
       await connect();
     } catch {
-      setServerError("Failed to connect wallet. Is Freighter installed?");
+      setError("Failed to connect wallet. Is Freighter installed?");
     }
   };
-  // FIX 3: shouldValidate: false so connecting a wallet doesn't trigger
-  useEffect(() => {
-    if (walletPublicKey) {
-      setValue("walletAddress", walletPublicKey, { shouldValidate: false });
-    }
-  }, [walletPublicKey, setValue]);
 
   const onSubmit = async (data: RegisterFormData) => {
     setError("");
@@ -150,7 +138,7 @@ export default function RegisterPage() {
     if (walletAddress) {
       return `Connected: ${walletAddress.slice(0, 6)}…${walletAddress.slice(-4)}`;
     }
-    if (isInitializing) return "Connecting…";
+    if (isWalletConnecting) return "Connecting…";
     return "Connect Freighter Wallet";
   })();
 
@@ -194,7 +182,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={handleConnectWallet}
-                disabled={isInitializing || isConnected}
+                disabled={isWalletConnecting || isConnected}
                 className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 <Wallet className="h-4 w-4 shrink-0" />
@@ -206,6 +194,9 @@ export default function RegisterPage() {
                 </p>
               )}
             </div>
+
+            {/* Hidden input to track wallet address in form */}
+            <input type="hidden" {...register("walletAddress")} />
 
             {/* Step 2 – Username */}
             <AuthInput
@@ -229,51 +220,23 @@ export default function RegisterPage() {
               register={register("email")}
             />
 
-              <AuthInput
-                id="password"
-                label="Password"
-                type="password"
-                placeholder="••••••••"
-                error={errors.password?.message}
-                register={register("password")}
-              />
-              {/*
-                FIX 4: Register walletAddress as a hidden input so react-hook-form
-                actually tracks the field. Without this, the field is unknown to RHF
-                and its value stays `undefined` in the form state — causing Zod to
-                throw "expected string, received undefined" on any validation pass.
-              */}
-              <input type="hidden" {...register("walletAddress")} />
+            {/* Step 4 – Password */}
+            <AuthInput
+              id="password"
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              error={errors.password?.message}
+              register={register("password")}
+            />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Wallet Connection
-                </label>
-                <button
-                  type="button"
-                  onClick={connectWallet}
-                  disabled={isWalletConnecting || isConnected}
-                  className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-                >
-                  <Wallet className="h-4 w-4" />
-                  {walletAddress
-                    ? `Connected: ${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`
-                    : isWalletConnecting
-                      ? "Connecting..."
-                      : "Connect Freighter Wallet"}
-                </button>
-                {errors.walletAddress && (
-                  <p className="text-sm text-red-600">{errors.walletAddress.message}</p>
-                )}
-              </div>
+            <FormError message={error} />
 
-              <FormError message={error} />
-
-              <AuthButton type="submit" isLoading={isSubmitting}>
-                Create Account
-              </AuthButton>
-            </form>
-          </div>
+            <AuthButton type="submit" isLoading={isSubmitting}>
+              Create Account
+            </AuthButton>
+          </form>
         </div>
       </div>
     </div>

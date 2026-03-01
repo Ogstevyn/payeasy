@@ -1,8 +1,4 @@
- name: Security Scanning, DAST & Dependency Verification
-
-env:
-  NODE_VERSION: '18'
-  REGISTRY_URL: 'https://staging.payeasy.app'
+name: Security Scanning, DAST & Dependency Verification
 
 on:
   push:
@@ -25,6 +21,10 @@ on:
         description: 'Target URL for DAST scan'
         required: false
         default: 'https://staging.payeasy.app'
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY_URL: 'https://staging.payeasy.app'
 
 permissions:
   contents: read
@@ -72,6 +72,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - run: npm ci && cd apps/web && npm ci && cd ../..
 
@@ -142,6 +143,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - run: npm ci && cd apps/web && npm ci && cd ../..
 
@@ -210,6 +212,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - id: check
         if: steps.files.outputs.any_changed == 'true' || github.event_name == 'schedule'
@@ -234,6 +237,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - run: npm ci && cd apps/web && npm ci || true
 
@@ -397,24 +401,28 @@ jobs:
               vulnCount: '${{ needs.analyze-dependencies.outputs.vulnerability-count }}'
             };
             
-            const icon = (status) => status === 'success' ? '✅' : '⚠️';
+            const icon = (s) => s === 'success' ? '✅' : '⚠️';
             
-            const comment = `## 🔒 Security Scan Results
-
-| Scanner | Result |
-|---------|--------|
-| CodeQL | ${icon(results.codeql)} |
-| Snyk | ${icon(results.snyk)} |
-| Semgrep | ${icon(results.semgrep)} |
-| Container | ${icon(results.trivy)} |
-
-**Vulnerabilities**: ${results.vulnCount}
-**Patch Status**: ${results.patches === 'success' ? '✅' : '⚠️'}
-
-[View Details](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/security)`;
+            const rows = [
+              ['CodeQL', icon(results.codeql)],
+              ['Snyk', icon(results.snyk)],
+              ['Semgrep', icon(results.semgrep)],
+              ['Container', icon(results.trivy)],
+            ].map(([name, status]) => `${name} | ${status}`).join('\n');
+            
+            const comment = [
+              '## 🔒 Security Scan Results',
+              'Scanner | Result',
+              '---------|--------',
+              rows,
+              '',
+              `**Vulnerabilities**: ${results.vulnCount}`,
+              `**Patch Status**: ${results.patches === 'success' ? '✅' : '⚠️'}`,
+              `[View Details](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/security)`
+            ].join('\n');
             
             if (context.issue?.number) {
-              github.rest.issues.createComment({
+              await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
