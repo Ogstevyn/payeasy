@@ -68,7 +68,7 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       const isDevelopment = process.env.NODE_ENV === 'development';
-      const shouldShowDetails = this.props.showDetails || isDevelopment;
+      const shouldShowDetails = isDevelopment && (this.props.showDetails !== false);
 
       const title = this.props.title || 'Something went wrong';
       const description = this.props.description ||
@@ -101,49 +101,60 @@ class ErrorBoundary extends Component<Props, State> {
             )}>
               {title}
             </h2>
-            <p className="mb-6 text-gray-600 dark:text-gray-400">
-              {"We've been notified and are looking into it."}
-
             <p className={cn(
               'text-lg leading-relaxed',
               'text-gray-700 dark:text-gray-300'
             )}>
               {description}
             </p>
-            <button
-              onClick={this.handleReset}
-              className={cn(
-                'inline-flex items-center justify-center gap-2',
-                'px-4 py-2 sm:px-6 sm:py-3',
-                'bg-red-600 text-white font-medium rounded-lg',
-                'hover:bg-red-700 active:bg-red-800',
-                'transition-colors duration-200',
-                'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600',
-                'disabled:opacity-50 disabled:cursor-not-allowed',
-                'w-full'
-              )}
-            >
-              <RotateCcw size={20} />
-              Try again
-            </button>
-            <button
-              onClick={this.handleReload}
-              className={cn(
-                'inline-flex items-center justify-center gap-2',
-                'px-4 py-2 sm:px-6 sm:py-3',
-                'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-lg',
-                'hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500',
-                'transition-colors duration-200',
-                'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400',
-                'disabled:opacity-50 disabled:cursor-not-allowed',
-                'w-full sm:w-auto'
-              )}
-            >
-              <Home size={20} />
-              Reload page
-            </button>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <button
+                onClick={this.handleReset}
+                className={cn(
+                  'inline-flex items-center justify-center gap-2',
+                  'px-4 py-2 sm:px-6 sm:py-3',
+                  'bg-red-600 text-white font-medium rounded-lg',
+                  'hover:bg-red-700 active:bg-red-800',
+                  'transition-colors duration-200',
+                  'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+              >
+                <RotateCcw size={20} />
+                Try again
+              </button>
+              <button
+                onClick={this.handleReload}
+                className={cn(
+                  'inline-flex items-center justify-center gap-2',
+                  'px-4 py-2 sm:px-6 sm:py-3',
+                  'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-lg',
+                  'hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500',
+                  'transition-colors duration-200',
+                  'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+              >
+                <Home size={20} />
+                Reload page
+              </button>
+            </div>
+
+            {/* Error Details (Development Only) */}
+            {shouldShowDetails && this.state.error && (
+              <details className="mt-8 w-full text-left">
+                <summary className="cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+                  Error Details
+                </summary>
+                <pre className="mt-4 overflow-auto rounded-md bg-gray-100 dark:bg-gray-800 p-4 text-xs text-gray-800 dark:text-gray-200">
+                  {this.state.error.stack || this.state.error.message}
+                </pre>
+              </details>
+            )}
           </div>
-        )
+        </div>
       );
     }
 
@@ -152,3 +163,4 @@ class ErrorBoundary extends Component<Props, State> {
 }
 
 export default ErrorBoundary;
+export { ErrorBoundary };
