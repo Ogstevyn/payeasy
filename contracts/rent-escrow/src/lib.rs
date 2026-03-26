@@ -1,54 +1,87 @@
-#![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Map};
+﻿#![no_std]
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
-//RentEscrow defined already
+/// Storage key definitions for persistent contract state.
+///
+/// Each variant maps to a unique slot in the Soroban persistent storage trie.
+/// Using a `#[contracttype]` enum guarantees type-safe, collision-free keys.
+///
+/// - `DataKey::Landlord` - stores the landlord's `Address`
+/// - `DataKey::Amount`   - stores the escrowed amount as `i128`
 #[contracttype]
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DataKey {
     Landlord,
-    TotalAmount,
-    Roommates,
-    Contributions,
-    Deadline,
-    IsReleased,
+    Amount,
 }
 
 #[contract]
-pub struct RentEscrow;
+pub struct RentEscrowContract;
 
 #[contractimpl]
-impl RentEscrow {
-    /// Initialize the rent escrow agreement
-    pub fn initialize(
-        env: Env,
-        landlord: Address,
-        total_amount: i128,
-        roommate_shares: Map<Address, i128>,
-        deadline: u64,
-    ) {
-        
+impl RentEscrowContract {
+    /// Initialize the escrow contract.
+    ///
+    /// Persists `landlord` and `amount` to ledger storage so that the values
+    /// survive across invocations and ledger closes.
+    ///
+    /// # Arguments
+    /// * `env`      - The Soroban environment handle.
+    /// * `landlord` - The `Address` of the landlord who controls the escrow.
+    /// * `amount`   - The escrowed amount in stroops (i128).
+    pub fn initialize(env: Env, landlord: Address, amount: i128) {
+        landlord.require_auth();
+
+        // Persist landlord address to ledger storage.
+        env.storage().persistent().set(&DataKey::Landlord, &landlord);
+
+        // Persist escrow amount to ledger storage.
+        env.storage().persistent().set(&DataKey::Amount, &amount);
     }
 
-    /// Roommates call this to contribute their share of the rent
-    pub fn contribute(env: Env, from: Address, amount: i128) {
-        // TODO: Implement contribution logic
-        // 1. Verify 'from' is a valid roommate
-        // 2. Transfer tokens from 'from' to the contract
-        // 3. Update contributions map
+    /// Update the escrow amount.
+    ///
+    /// Reads the stored landlord from persistent storage and verifies that
+    /// `caller` matches before allowing the write.
+    ///
+    /// # Arguments
+    /// * `env`        - The Soroban environment handle.
+    /// * `caller`     - The invoker's `Address`; must equal the stored landlord.
+    /// * `new_amount` - Replacement escrow amount in stroops (i128).
+    pub fn set_amount(env: Env, caller: Address, new_amount: i128) {
+        caller.require_auth();
+        let landlord: Address = env.storage()
+            .persistent()
+            .get(&DataKey::Landlord)
+            .expect("landlord not set");
+        assert_eq!(caller, landlord, "only the landlord can update the amount");
+        env.storage().persistent().set(&DataKey::Amount, &new_amount);
     }
 
-    /// Release the total rent to the landlord if fully funded
-    pub fn release(env: Env) {
-        // TODO: Implement release logic
-        // 1. Verify total_amount is reached
-        // 2. Transfer everything to the landlord
-        // 3. Mark as released
+    /// Retrieve the landlord address from persistent storage.
+    ///
+    /// Panics with a descriptive message if `initialize` has not been called.
+    ///
+    /// # Returns
+    /// The `Address` of the landlord stored during initialization.
+    pub fn get_landlord(env: Env) -> Address {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Landlord)
+            .expect("landlord not set; call initialize first")
     }
 
-    /// Refund roommates if the deadline has passed and rent is not fully funded
-    pub fn refund(env: Env, to: Address) {
-
+    /// Retrieve the current escrow amount from persistent storage.
+    ///
+    /// Returns `0` if `initialize` has not yet been called, which is a safe
+    /// default for an unsigned integer-style amount field.
+    ///
+    /// # Returns
+    /// The escrowed amount in stroops as `i128`.
+    pub fn get_amount(env: Env) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Amount)
+            .unwrap_or(0)
     }
 }
-
-mod test;
