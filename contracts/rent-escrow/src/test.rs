@@ -35,7 +35,7 @@ fn test_initialize() {
     roommate_shares.set(Address::generate(&env), 500);
 
     env.mock_all_auths();
-    client.initialize(&landlord, &1000_i128, &roommate_shares);
+    client.initialize(&landlord, &1000_i128, &TEST_DEADLINE, &roommate_shares);
 
     env.as_contract(&contract_id, || {
         let escrow: RentEscrow = env
@@ -199,3 +199,31 @@ fn test_release_while_underfunded_fails() {
 /// Issue #32 – release: succeeds when fully funded
 ///
 /// Once every roommate
+
+#[test]
+fn test_share_sum_equals_rent_succeeds() {
+    let env = Env::default();
+    let contract_id = env.register(RentEscrowContract, ());
+    let client = RentEscrowContractClient::new(&env, &contract_id);
+    let landlord = Address::generate(&env);
+    let mut shares = Map::new(&env);
+    shares.set(Address::generate(&env), 600_i128);
+    shares.set(Address::generate(&env), 400_i128);
+    env.mock_all_auths();
+    client.initialize(&landlord, &1000_i128, &TEST_DEADLINE, &shares);
+    assert_eq!(client.get_amount(), 1000_i128);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_share_sum_exceeds_rent_fails() {
+    let env = Env::default();
+    let contract_id = env.register(RentEscrowContract, ());
+    let client = RentEscrowContractClient::new(&env, &contract_id);
+    let landlord = Address::generate(&env);
+    let mut shares = Map::new(&env);
+    shares.set(Address::generate(&env), 700_i128);
+    shares.set(Address::generate(&env), 500_i128);
+    env.mock_all_auths();
+    client.initialize(&landlord, &1000_i128, &TEST_DEADLINE, &shares);
+}
