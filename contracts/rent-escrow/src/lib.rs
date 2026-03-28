@@ -17,6 +17,8 @@ pub enum Error {
     InsufficientFunding = 2,
     /// Caller is not a registered roommate in this escrow.
     Unauthorized = 3,
+    /// Refunds are not available until the deadline has passed.
+    DeadlineNotReached = 4,
 }
 
 /// Storage key definitions for persistent contract state.
@@ -26,6 +28,7 @@ pub enum Error {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DataKey {
     Escrow,
+    Deadline,
 }
 
 #[contracttype]
@@ -57,6 +60,7 @@ impl RentEscrowContract {
         env: Env,
         landlord: Address,
         rent_amount: i128,
+        deadline: u64,
         roommates: Map<Address, i128>,
     ) -> Result<(), Error> {
         landlord.require_auth();
@@ -78,6 +82,8 @@ impl RentEscrowContract {
             rent_amount,
             roommates: roommate_states,
         });
+
+        env.storage().persistent().set(&DataKey::Deadline, &deadline);
 
         Ok(())
     }
@@ -219,6 +225,42 @@ impl RentEscrowContract {
             Some(state) => state.paid,
             None => 0,
         }
+    }
+
+    /// Retrieve the deadline timestamp from persistent storage.
+    pub fn get_deadline(env: Env) -> u64 {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Deadline)
+            .expect("escrow not initialized")
+    }
+
+    /// Implement function for individual roommates to reclaim deposits.
+    /// Reverts if called before the deadline.
+    pub fn claim_refund(env: Env, from: Address) -> Result<(), Error> {
+        from.require_auth();
+
+        let deadline: u64 = env.storage()
+            .persistent()
+            .get(&DataKey::Deadline)
+            .expect("escrow not initialized");
+
+        if env.ledger().timestamp() < deadline {
+            return Err(Error::DeadlineNotReached);
+        }
+
+        let escrow: RentEscrow = env.storage()
+            .persistent()
+            .get(&DataKey::Escrow)
+            .expect("escrow not initialized");
+
+        if !escrow.roommates.contains_key(from.clone()) {
+            return Err(Error::Unauthorized);
+        }
+
+        // Logic to transfer token back to user will be added here
+        
+        Ok(())
     }
 }
 
