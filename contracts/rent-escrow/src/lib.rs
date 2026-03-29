@@ -71,7 +71,7 @@ impl RentEscrowContract {
     ) -> Result<(), Error> {
         landlord.require_auth();
 
-        if rent_amount <= 0 {
+        if rent_amount < MIN_RENT {
             return Err(Error::InvalidAmount);
         }
 

@@ -198,7 +198,7 @@ fn test_claim_refund_transfer() {
     let (client, _, roommate_a, _, _, token) = setup_escrow(&env);
 
     client.contribute(&roommate_a, &300_i128);
-    
+
     // Fast forward time past deadline
     env.ledger().set_timestamp(TEST_DEADLINE + 1);
 
@@ -208,4 +208,41 @@ fn test_claim_refund_transfer() {
     assert_eq!(token.balance(&roommate_a), initial_balance + 300_i128);
     assert_eq!(token.balance(&client.address), 0_i128);
     assert_eq!(client.get_balance(&roommate_a), 0_i128);
+}
+
+#[test]
+fn test_initialize_rejects_below_min_rent() {
+    let env = Env::default();
+    let contract_id = env.register(RentEscrowContract, ());
+    let client = RentEscrowContractClient::new(&env, &contract_id);
+
+    let landlord = Address::generate(&env);
+    let token_address = Address::generate(&env);
+    let roommate = Address::generate(&env);
+
+    let mut roommate_shares = Map::new(&env);
+    roommate_shares.set(roommate.clone(), 50_i128);
+
+    env.mock_all_auths();
+    // rent_amount below MIN_RENT (100) must return InvalidAmount
+    let result = client.try_initialize(&landlord, &token_address, &50_i128, &TEST_DEADLINE, &roommate_shares);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_initialize_accepts_min_rent() {
+    let env = Env::default();
+    let contract_id = env.register(RentEscrowContract, ());
+    let client = RentEscrowContractClient::new(&env, &contract_id);
+
+    let landlord = Address::generate(&env);
+    let token_address = Address::generate(&env);
+    let roommate = Address::generate(&env);
+
+    let mut roommate_shares = Map::new(&env);
+    roommate_shares.set(roommate.clone(), 100_i128);
+
+    env.mock_all_auths();
+    // rent_amount exactly at MIN_RENT (100) must succeed
+    client.initialize(&landlord, &token_address, &100_i128, &TEST_DEADLINE, &roommate_shares);
 }
