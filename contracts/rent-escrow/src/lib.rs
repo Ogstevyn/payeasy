@@ -33,7 +33,6 @@ pub enum Error {
 pub enum DataKey {
     Escrow,
     Deadline,
-    RentToken,
     /// Maps a roommate Address to their expected rent share (i128).
     Shares(Address),
     /// Maps a roommate Address to their total contributed amount (i128).
@@ -41,10 +40,15 @@ pub enum DataKey {
 }
 
 /// Tracks an individual roommate's rent obligation and payment progress.
+///
+/// Stored per-roommate in the escrow using `DataKey::Escrow` inside the
+/// `RentEscrow.roommates` map, keyed by the roommate's `Address`.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RoommateState {
+    /// The roommate's expected rent share in token units (i128).
     pub expected: i128,
+    /// The cumulative amount the roommate has contributed so far (i128).
     pub paid: i128,
 }
 
@@ -54,6 +58,7 @@ pub struct RoommateState {
 pub struct RentEscrow {
     pub landlord: Address,
     pub token: Address,
+    pub token_address: Address,
     pub rent_amount: i128,
     pub roommates: Map<Address, RoommateState>,
 }
@@ -70,12 +75,24 @@ pub struct RentEscrowContract;
 #[contractimpl]
 impl RentEscrowContract {
     /// Initialize the escrow with landlord, token, rent amount, deadline, and roommates.
-    ///
-    /// Reverts if `landlord` is the contract itself.
     pub fn initialize(
         env: Env,
         landlord: Address,
         token: Address,
+    pub fn initialize(
+        env: Env,
+        landlord: Address,
+        token: Address,
+    /// Initialize the escrow with landlord, rent amount, and roommates.
+    ///
+    /// Reverts if `landlord` is the contract itself.
+    ///
+    /// Persists the escrow state to ledger storage so that the values
+    /// survive across invocations and ledger closes.
+    pub fn initialize(
+        env: Env,
+        landlord: Address,
+        token_address: Address,
         rent_amount: i128,
         deadline: u64,
         roommates: Map<Address, i128>,
@@ -87,8 +104,7 @@ impl RentEscrowContract {
 
         landlord.require_auth();
 
-        // AC: total_rent > MIN_RENT
-        if rent_amount <= MIN_RENT {
+        if rent_amount < MIN_RENT {
             return Err(Error::InvalidAmount);
         }
 
@@ -110,17 +126,16 @@ impl RentEscrowContract {
 
         env.storage().persistent().set(&DataKey::Escrow, &RentEscrow {
             landlord,
-            token: token.clone(),
+            token,
+            token_address,
             rent_amount,
             roommates: roommate_states,
         });
 
         env.storage().persistent().set(&DataKey::Deadline, &deadline);
-        env.storage().persistent().set(&DataKey::RentToken, &token);
 
         env.storage().persistent().extend_ttl(&DataKey::Escrow, BUMP_THRESHOLD, BUMP_AMOUNT);
         env.storage().persistent().extend_ttl(&DataKey::Deadline, BUMP_THRESHOLD, BUMP_AMOUNT);
-        env.storage().persistent().extend_ttl(&DataKey::RentToken, BUMP_THRESHOLD, BUMP_AMOUNT);
 
         Ok(())
     }
@@ -181,6 +196,9 @@ impl RentEscrowContract {
         let mut state = escrow.roommates.get(from.clone()).unwrap();
         state.paid += amount;
         escrow.roommates.set(from.clone(), state);
+
+        let token_client = token::Client::new(&env, &escrow.token_address);
+        token_client.transfer(&from, &env.current_contract_address(), &amount);
 
         env.storage().persistent().set(&DataKey::Escrow, &escrow);
         env.storage().persistent().extend_ttl(&DataKey::Escrow, BUMP_THRESHOLD, BUMP_AMOUNT);
@@ -245,23 +263,27 @@ impl RentEscrowContract {
             .persistent()
             .get(&DataKey::Escrow)
             .expect("escrow not initialized");
-        
         let token_client = token::TokenClient::new(&env, &escrow.token);
         let balance = token_client.balance(&env.current_contract_address());
-        
         if balance < escrow.rent_amount {
             return Err(Error::InsufficientFunding);
         }
-
         token_client.transfer(&env.current_contract_address(), &escrow.landlord, &balance);
+
+        let escrow: RentEscrow = env.storage()
+            .persistent()
+            .get(&DataKey::Escrow)
+            .expect("escrow not initialized");
+
+        let total_funded = Self::get_total_funded(env.clone());
+        let token_client = token::Client::new(&env, &escrow.token_address);
+        token_client.transfer(&env.current_contract_address(), &escrow.landlord, &total_funded);
 
         env.storage().persistent().extend_ttl(&DataKey::Escrow, BUMP_THRESHOLD, BUMP_AMOUNT);
         env.storage().persistent().extend_ttl(&DataKey::Deadline, BUMP_THRESHOLD, BUMP_AMOUNT);
-        
-        env.events().publish(
-            (symbol_short!("release"), escrow.landlord),
-            balance,
-        );
+        env.events().publish_event(&AgreementReleased {
+            amount: total_funded,
+        });
 
         Ok(())
     }
@@ -287,7 +309,7 @@ impl RentEscrowContract {
         escrow.roommates.set(roommate.clone(), state);
         env.storage().persistent().set(&DataKey::Escrow, &escrow);
 
-        let token_client = token::TokenClient::new(&env, &escrow.token);
+        let token_client = token::Client::new(&env, &escrow.token_address);
         token_client.transfer(&env.current_contract_address(), &roommate, &refund_amount);
 
         Ok(refund_amount)
@@ -303,12 +325,12 @@ impl RentEscrowContract {
     }
 
     /// Retrieve the token address.
-    pub fn get_token(env: Env) -> Address {
+    pub fn get_token_address(env: Env) -> Address {
         let escrow: RentEscrow = env.storage()
             .persistent()
             .get(&DataKey::Escrow)
             .expect("escrow not initialized");
-        escrow.token
+        escrow.token_address
     }
 
     /// Retrieve the rent amount.
@@ -382,7 +404,7 @@ impl RentEscrowContract {
 
         env.storage().persistent().set(&DataKey::Escrow, &escrow);
 
-        let token_client = token::TokenClient::new(&env, &escrow.token);
+        let token_client = token::Client::new(&env, &escrow.token_address);
         token_client.transfer(&env.current_contract_address(), &from, &refund_amount);
 
         env.storage().persistent().extend_ttl(&DataKey::Escrow, BUMP_THRESHOLD, BUMP_AMOUNT);

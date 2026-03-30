@@ -34,12 +34,12 @@ export async function connectFreighter(): Promise<string | null> {
 }
 
 /**
- * Checks if the user has already allowed the application to access their Freighter account.
+ * Checks if the user is currently connected to Freighter.
  */
 export async function checkConnection(): Promise<boolean> {
   try {
-    const { isAllowed } = await freighter.isAllowed();
-    return isAllowed;
+    const { isConnected } = await freighter.isConnected();
+    return isConnected;
   } catch {
     return false;
   }

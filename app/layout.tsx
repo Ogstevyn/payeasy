@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { StellarAuthProvider } from "@/contexts/StellarAuthContext";
+import { StellarProvider } from "@/context/StellarContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,9 +32,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <div className="mesh-gradient" aria-hidden="true" />
-        <StellarAuthProvider>
+        <StellarProvider>
           <div className="relative z-10">{children}</div>
-        </StellarAuthProvider>
+        </StellarProvider>
       </body>
     </html>
   );
