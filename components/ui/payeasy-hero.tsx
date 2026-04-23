@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -288,10 +289,12 @@ export function PayEasyHero({
               >
                 <div className="flex flex-row -space-x-2">
                   {socialProof.avatars.map((avatar, index) => (
-                    <img
+                    <Image
                       key={index}
                       src={avatar}
                       alt={`User ${index + 1}`}
+                      width={36}
+                      height={36}
                       className="w-9 h-9 rounded-full border-2 border-dark-950 object-cover"
                     />
                   ))}
@@ -371,9 +374,10 @@ export function PayEasyHero({
                 className="flex-shrink-0 cursor-pointer relative overflow-hidden w-[320px] h-[420px] rounded-[20px] border border-white/[0.06]"
                 style={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)" }}
               >
-                <img
+                <Image
                   src={program.image}
                   alt={program.title}
+                  fill
                   className="w-full h-full object-cover"
                 />
                 <div

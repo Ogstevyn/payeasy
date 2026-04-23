@@ -6,7 +6,7 @@ import {
   getAddress,
   signTransaction,
 } from "@stellar/freighter-api";
-import { getCurrentNetwork } from "./config";
+import { getCurrentNetwork } from "./config.ts";
 
 /**
  * Checks if the Freighter extension is installed in the browser.

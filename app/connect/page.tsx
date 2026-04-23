@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import { useStellar } from "@/context/StellarContext";
 import { PayEasyLogo } from "@/components/ui/payeasy-logo";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import FundTestnetButton from "@/components/wallet/FundTestnetButton";
 
 const FEATURES = [
@@ -54,6 +55,7 @@ export default function ConnectWalletPage() {
 
   const [copied, setCopied] = useState(false);
   const [step, setStep] = useState<Step>("intro");
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
 
   useEffect(() => {
     if (isConnected && publicKey) {
@@ -81,6 +83,10 @@ export default function ConnectWalletPage() {
   const handleDisconnect = () => {
     disconnect();
     setStep("intro");
+  };
+
+  const confirmDisconnect = () => {
+    setShowDisconnectConfirm(true);
   };
 
   return (
@@ -383,7 +389,7 @@ export default function ConnectWalletPage() {
 
               {/* Disconnect */}
               <button
-                onClick={handleDisconnect}
+                onClick={confirmDisconnect}
                 className="mt-6 flex items-center gap-2 text-sm text-dark-500 hover:text-red-400 transition-colors"
               >
                 <LogOut size={14} />
@@ -403,6 +409,16 @@ export default function ConnectWalletPage() {
       >
         Powered by Stellar blockchain. Your keys never leave your browser.
       </motion.p>
+
+      <ConfirmDialog
+        isOpen={showDisconnectConfirm}
+        onClose={() => setShowDisconnectConfirm(false)}
+        onConfirm={handleDisconnect}
+        title="Disconnect Wallet?"
+        description="Are you sure you want to disconnect your Stellar wallet? You will need to reconnect to create new escrows or manage your agreements."
+        confirmText="Disconnect"
+        variant="danger"
+      />
     </main>
   );
 }

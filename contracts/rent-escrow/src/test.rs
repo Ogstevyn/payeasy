@@ -66,7 +66,6 @@ fn test_initialize() {
     roommate_shares.set(Address::generate(&env), 500);
 
     env.mock_all_auths();
-    client.initialize(&landlord, &1000_i128, &TEST_DEADLINE, &roommate_shares);
     client.initialize(
         &landlord,
         &token_address,
@@ -242,12 +241,16 @@ fn test_reclaim_deposit_transfer() {
     assert_eq!(token.balance(&roommate_a), 500_i128);
 
     client.refund(&roommate_a);
+    assert_eq!(token.balance(&roommate_a), 1000_i128);
 
-    let initial_balance = token.balance(&roommate_a);
+    env.ledger().set_timestamp(TEST_DEADLINE + 1);
+    client.contribute(&roommate_a, &500_i128);
     client.reclaim_deposit(&roommate_a);
+    assert_eq!(token.balance(&roommate_a), 1000_i128);
+}
 
 #[test]
-#[should_panic(expected = "Error(Contract, #5)")]
+#[should_panic(expected = "Error(Contract, #6)")]
 fn test_double_refund_fails() {
     let env = Env::default();
     let (client, _, roommate_a, _, _, _) = setup_escrow(&env);

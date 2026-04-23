@@ -1,10 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import type { RoommateInputValue } from "./createEscrowForm.helpers";
 
 interface RoommateInputProps {
   roommate: RoommateInputValue;
   index: number;
+  totalRent: string;
   onChange: (
     roommateId: string,
     field: "address" | "shareAmount",
@@ -17,10 +19,18 @@ interface RoommateInputProps {
 export default function RoommateInput({
   roommate,
   index,
+  totalRent,
   onChange,
   onRemove,
   disableRemove,
 }: RoommateInputProps) {
+  const percentage = useMemo(() => {
+    const total = parseFloat(totalRent);
+    const share = parseFloat(roommate.shareAmount);
+    if (isNaN(total) || isNaN(share) || total === 0) return null;
+    return ((share / total) * 100).toFixed(1);
+  }, [totalRent, roommate.shareAmount]);
+
   return (
     <div className="glass-card p-4 space-y-3">
       <div className="flex items-center justify-between">
@@ -50,9 +60,16 @@ export default function RoommateInput({
       </div>
 
       <div className="space-y-2">
-        <label className="block text-xs uppercase tracking-wide text-dark-500" htmlFor={`roommate-share-${roommate.id}`}>
-          Share Amount
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="block text-xs uppercase tracking-wide text-dark-500" htmlFor={`roommate-share-${roommate.id}`}>
+            Share Amount
+          </label>
+          {percentage !== null && (
+            <span className="text-xs font-medium text-brand-300">
+              ({percentage}%)
+            </span>
+          )}
+        </div>
         <input
           id={`roommate-share-${roommate.id}`}
           type="number"

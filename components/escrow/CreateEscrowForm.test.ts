@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  calculateRemainingAmount,
   nextEscrowStep,
   previousEscrowStep,
   toLedgerTimestamp,
@@ -60,4 +61,23 @@ test("step 3 validation passes with exact allocation", () => {
   const result = validateEscrowStep(3, draft);
   assert.equal(result.isValid, true);
   assert.equal(result.errors.length, 0);
+});
+
+test("calculateRemainingAmount handles 3 roommates summing to total", () => {
+  const roommates = [
+    { id: "1", address: "G1", shareAmount: "300" },
+    { id: "2", address: "G2", shareAmount: "400" },
+    { id: "3", address: "G3", shareAmount: "300" },
+  ];
+  const remaining = calculateRemainingAmount("1000", roommates);
+  assert.equal(remaining, 0);
+});
+
+test("calculateRemainingAmount handles excess allocation", () => {
+  const roommates = [
+    { id: "1", address: "G1", shareAmount: "600" },
+    { id: "2", address: "G2", shareAmount: "500" },
+  ];
+  const remaining = calculateRemainingAmount("1000", roommates);
+  assert.equal(remaining, -100);
 });

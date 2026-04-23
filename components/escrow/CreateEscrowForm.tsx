@@ -7,8 +7,10 @@ import { createEscrow } from "@/lib/mock/escrow";
 import { getExplorerLink, type ExplorerProvider } from "@/lib/stellar/explorer";
 
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { useBeforeUnload } from "@/hooks/useBeforeUnload";
 import RoommateInput from "./RoommateInput";
 import {
+  calculateRemainingAmount,
   hasExactShareAllocation,
   nextEscrowStep,
   previousEscrowStep,
@@ -118,6 +120,13 @@ export default function CreateEscrowForm({
 }: CreateEscrowFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const initialValues: EscrowFormDraft = useMemo(() => ({
+    totalRent: "",
+    tokenId: "",
+    deadlineDate: "",
+    roommates: [createRoommate()],
+  }), []);
+
   const {
     values: draft,
     setValues: setDraft,
@@ -127,16 +136,26 @@ export default function CreateEscrowForm({
     clearDraft,
   } = useFormDraft<EscrowFormDraft>({
     key: "escrow_create_draft",
-    initialValues: {
-      totalRent: "",
-      tokenId: "",
-      deadlineDate: "",
-      roommates: [createRoommate()],
-    },
+    initialValues,
   });
+
+  const isDirty = useMemo(() => {
+    // Basic dirty check: check if any field has been touched
+    const isBaseRoommateDirty = (r: RoommateInputValue) => r.address !== "" || r.shareAmount !== "";
+    
+    return draft.totalRent !== "" || 
+           draft.tokenId !== "" || 
+           draft.deadlineDate !== "" || 
+           draft.roommates.length > 1 ||
+           (draft.roommates.length === 1 && isBaseRoommateDirty(draft.roommates[0]));
+  }, [draft]);
+
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submission, setSubmission] = useState<SubmissionState | null>(null);
+
+  // Warn before unload if there are unsaved changes and we haven't submitted
+  useBeforeUnload(isDirty && !submission);
 
   const totalRoommateShares = useMemo(
     () => sumRoommateShares(draft.roommates),
@@ -149,6 +168,11 @@ export default function CreateEscrowForm({
   const deadlineLedgerTimestamp = useMemo(
     () => toLedgerTimestamp(draft.deadlineDate),
     [draft.deadlineDate]
+  );
+
+  const remainingAmount = useMemo(
+    () => calculateRemainingAmount(draft.totalRent, draft.roommates),
+    [draft.totalRent, draft.roommates]
   );
 
   const currentStepLabel = STEP_LABELS[step - 1];
@@ -221,13 +245,14 @@ export default function CreateEscrowForm({
       setErrors([]);
 
       // Call the mock service
-      const { contractId } = await createEscrow();
+      const result = await createEscrow();
+      setSubmission(result);
 
       // Clear draft on successful submission
       clearDraft();
 
       // Redirect to success page
-      router.push(`/escrow/success?id=${contractId}`);
+      router.push(`/escrow/success?id=${result.contractId || ""}`);
     } catch (error) {
       setErrors([
         error instanceof Error
@@ -384,6 +409,7 @@ export default function CreateEscrowForm({
                   key={roommate.id}
                   roommate={roommate}
                   index={index}
+                  totalRent={draft.totalRent}
                   onChange={handleRoommateChange}
                   onRemove={handleRoommateRemove}
                   disableRemove={draft.roommates.length === 1}
@@ -407,6 +433,9 @@ export default function CreateEscrowForm({
             <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-dark-400 space-y-1">
               <p>Total rent: {draft.totalRent || "0"}</p>
               <p>Total roommate shares: {totalRoommateShares.toFixed(7).replace(/\.0+$/, "")}</p>
+              <p className={remainingAmount < 0 ? "text-red-400 font-medium" : ""}>
+                Remaining: {remainingAmount.toFixed(7).replace(/\.?0+$/, "")} {draft.tokenId || "XLM"}
+              </p>
               <p className={sharesMatchTotal ? "text-accent-300" : "text-red-300"}>
                 {sharesMatchTotal
                   ? "Share allocation is valid."

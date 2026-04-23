@@ -15,7 +15,8 @@ import {
   scValToNative,
   BASE_FEE,
 } from "@stellar/stellar-sdk";
-import { getAddress, signTransaction } from "@stellar/freighter-api";
+import freighterApi from "@stellar/freighter-api";
+const { getAddress, signTransaction } = freighterApi;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
