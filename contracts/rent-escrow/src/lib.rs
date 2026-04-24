@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, contracterror, symbol_short, token, Address, Env, Map, Symbol};
+use soroban_sdk::{contract, contractevent, contractimpl, contracttype, contracterror, symbol_short, token, Address, Env, Map};
 
 /// Minimum rent amount in stroops/token-units to prevent micro-escrow spam
 pub const MIN_RENT: i128 = 100;

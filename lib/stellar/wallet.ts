@@ -1,11 +1,7 @@
-import {
-  isConnected,
-  isAllowed,
-  setAllowed,
-  requestAccess,
-  getAddress,
-  signTransaction,
-} from "@stellar/freighter-api";
+// @stellar/freighter-api is a CJS module; default import avoids Node ESM named-export error
+import freighterApi from "@stellar/freighter-api";
+const { isConnected, isAllowed, setAllowed, requestAccess, getAddress, signTransaction } =
+  freighterApi as typeof import("@stellar/freighter-api");
 import { getCurrentNetwork } from "./config.ts";
 
 /**

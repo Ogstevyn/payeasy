@@ -30,8 +30,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            contracts/rent-escrow/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('contracts/rent-escrow/Cargo.lock') }}
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
 
@@ -54,5 +54,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rent-escrow-wasm
-          path: contracts/rent-escrow/target/wasm32-unknown-unknown/release/*.wasm
+          path: target/wasm32-unknown-unknown/release/*.wasm
           if-no-files-found: error
