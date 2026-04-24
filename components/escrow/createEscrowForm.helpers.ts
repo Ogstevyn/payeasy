@@ -1,4 +1,5 @@
 import type { SupportedToken } from "../../lib/stellar/config.ts";
+import { isDateOnOrAfterTomorrow } from "../ui/date-input.helpers.ts";
 
 export const MIN_ESCROW_STEP = 1;
 export const MAX_ESCROW_STEP = 4;
@@ -144,6 +145,8 @@ export function validateEscrowStep(
     const ledgerTimestamp = toLedgerTimestamp(draft.deadlineDate);
     if (!ledgerTimestamp) {
       errors.push("Set a valid deadline date.");
+    } else if (!isDateOnOrAfterTomorrow(draft.deadlineDate)) {
+      errors.push("Deadline must be tomorrow or later.");
     }
   }
 
