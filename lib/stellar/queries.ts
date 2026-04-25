@@ -256,6 +256,7 @@ function parseBoolRetval(retval: unknown): boolean {
   );
 }
 
+// ─── Contract state ───────────────────────────────────────────────────────────
 // ─── Full contract state ──────────────────────────────────────────────────────
 
 export interface ContractState {
@@ -263,6 +264,8 @@ export interface ContractState {
   landlord: string;
   totalRent: string;
   deadline: string;
+  /** Unix timestamp (seconds) of the deadline, for numeric comparison. */
+  deadlineEpoch: number;
   status: "active" | "funded" | "released" | "expired";
   totalFunded: number;
   lastUpdate: string;
@@ -320,14 +323,12 @@ export async function getContractState(contractId: string): Promise<ContractStat
         }
       },
     },
-    builder: {
-      buildInvocationXdr,
-    },
+    builder: { buildInvocationXdr },
     contractId,
   };
 
   try {
-    const [id, landlord, totalRent, deadline, totalFunded, isFunded] = await Promise.all([
+    const [id, landlord, totalRent, deadlineStr, totalFunded, isFunded] = await Promise.all([
       Promise.resolve(contractId),
       (async () => {
         try { return await getLandlord(ctx); }
@@ -354,20 +355,21 @@ export async function getContractState(contractId: string): Promise<ContractStat
       })(),
     ]);
 
+    const deadlineEpoch = parseInt(deadlineStr, 10);
     const status = isFunded ? "funded" as const : "active" as const;
-    const roommates: ContractState["roommates"] = [];
 
     return {
       id,
       landlord,
       totalRent,
-      deadline: new Date(parseInt(deadline) * 1000).toLocaleDateString("en-US", {
+      deadline: new Date(deadlineEpoch * 1000).toLocaleDateString("en-US", {
         year: "numeric", month: "short", day: "numeric",
       }),
+      deadlineEpoch,
       status,
       totalFunded,
       lastUpdate: new Date().toISOString(),
-      roommates,
+      roommates: [],
     };
   } catch (err) {
     if (err instanceof ContractQueryError) throw err;
