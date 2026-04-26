@@ -28,8 +28,6 @@ export function ConfirmDialog({
   cancelText = "Cancel",
   variant = "primary",
 }: ConfirmDialogProps) {
-  variant = "primary",
-}: ConfirmDialogProps) {
   const containerRef = useFocusTrap(isOpen, onClose);
 
   // Lock body scroll when modal is open
