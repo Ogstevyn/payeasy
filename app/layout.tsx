@@ -22,21 +22,6 @@ export const metadata: Metadata = {
       "Find roommates, split rent, and pay securely through Stellar blockchain escrow.",
     type: "website",
     url: "https://payeasy.dev",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "PayEasy - Blockchain-Powered Rent Sharing",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "PayEasy — Blockchain-Powered Rent Sharing",
-    description:
-      "Find roommates, split rent, and pay securely through Stellar blockchain escrow.",
-    images: ["/og-image.png"],
   },
 };
 

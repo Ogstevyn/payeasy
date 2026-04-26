@@ -51,7 +51,7 @@ export default function RoommateInput({
           type="button"
           onClick={() => onRemove(roommate.id)}
           disabled={disableRemove}
-          className="text-xs px-3 py-2.5 sm:py-1 rounded-md border border-white/10 text-dark-400 hover:text-dark-200 disabled:opacity-40 disabled:cursor-not-allowed min-h-11 sm:min-h-auto flex items-center justify-center"
+          className="text-xs px-3 py-1 rounded-md border border-white/10 text-dark-400 hover:text-dark-200 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Remove
         </button>

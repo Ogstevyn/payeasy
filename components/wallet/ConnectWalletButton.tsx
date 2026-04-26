@@ -90,7 +90,7 @@ export default function ConnectWalletButton() {
             }
           }}
           disabled={isConnecting}
-          className="btn-primary !py-3 sm:!py-2.5 !px-5 !text-sm !rounded-lg flex items-center gap-2 group transition-all hover:scale-105 active:scale-95 disabled:opacity-50 min-h-11 sm:min-h-auto"
+          className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg flex items-center gap-2 group transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           <Wallet size={16} className="group-hover:rotate-12 transition-transform" />
           {isConnecting ? "Connecting..." : "Connect Wallet"}
@@ -123,7 +123,7 @@ export default function ConnectWalletButton() {
     <>
       <button
         onClick={handleCopy}
-        className="w-full flex items-center gap-3 px-4 py-3 sm:px-3 sm:py-2.5 text-sm text-dark-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors min-h-11 sm:min-h-auto"
+        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-dark-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
       >
         {copied ? (
           <Check size={16} className="text-emerald-500" />
@@ -135,7 +135,7 @@ export default function ConnectWalletButton() {
 
       <button
         onClick={() => { setIsOpen(false); router.push("/connect"); }}
-        className="w-full flex items-center gap-3 px-4 py-3 sm:px-3 sm:py-2.5 text-sm text-dark-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors min-h-11 sm:min-h-auto"
+        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-dark-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
       >
         <ExternalLink size={16} />
         <span>Wallet Dashboard</span>
@@ -145,7 +145,7 @@ export default function ConnectWalletButton() {
 
       <button
         onClick={confirmDisconnect}
-        className="w-full flex items-center gap-3 px-4 py-3 sm:px-3 sm:py-2.5 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors min-h-11 sm:min-h-auto"
+        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
       >
         <LogOut size={16} />
         <span>Disconnect</span>
@@ -157,7 +157,7 @@ export default function ConnectWalletButton() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="glass-button flex items-center gap-2 px-4 py-3 sm:py-2.5 rounded-lg border border-white/10 hover:bg-white/5 transition-all min-h-11 sm:min-h-auto"
+        className="glass-button flex items-center gap-2 px-4 py-2.5 rounded-lg border border-white/10 hover:bg-white/5 transition-all"
       >
         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
         <span className="text-sm font-medium text-white font-mono">{truncatedKey}</span>

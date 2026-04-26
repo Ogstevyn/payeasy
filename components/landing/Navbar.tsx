@@ -55,7 +55,7 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          <a href="#" className="btn-secondary !py-2.5 !px-5 !text-sm !rounded-lg min-h-auto">
+          <a href="#" className="btn-secondary !py-2.5 !px-5 !text-sm !rounded-lg">
             Sign In
           </a>
           <ConnectWalletButton />
@@ -64,7 +64,7 @@ export default function Navbar() {
         {/* Mobile Menu Toggle */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden text-white min-h-11 min-w-11 flex items-center justify-center"
+          className="md:hidden text-white p-2"
           aria-label="Toggle menu"
         >
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -80,13 +80,13 @@ export default function Navbar() {
                 key={link.name}
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-dark-300 hover:text-white transition-colors py-3 px-2 text-lg font-medium min-h-11 flex items-center"
+                className="text-dark-300 hover:text-white transition-colors py-2 text-lg font-medium"
               >
                 {link.name}
               </a>
             ))}
             <div className="h-px bg-white/10 my-2" />
-            <a href="#" className="btn-secondary !justify-center min-h-11 flex items-center">
+            <a href="#" className="btn-secondary !justify-center">
               Sign In
             </a>
             <div className="flex justify-center">
