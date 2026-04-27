@@ -11,7 +11,20 @@ export async function generateMetadata({ params }: { params: { contractId: strin
   };
 }
 
-export default function EscrowDashboardPage({ params }: { params: { contractId: string } }) {
+import { getContractState } from "@/lib/stellar/queries";
+import EscrowNotFound from "@/components/escrow/EscrowNotFound";
+
+export default async function EscrowDashboardPage({ params }: { params: { contractId: string } }) {
+  try {
+    const contractState = await getContractState(params.contractId);
+    if (!contractState) {
+      return <EscrowNotFound />;
+    }
+  } catch (err) {
+    // Contract query failed (e.g., contract not found on-chain or network error)
+    return <EscrowNotFound />;
+  }
+
   return <EscrowDashboardClient contractId={params.contractId} />;
 }
 

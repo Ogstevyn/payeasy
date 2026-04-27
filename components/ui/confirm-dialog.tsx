@@ -16,6 +16,8 @@ interface ConfirmDialogProps {
   variant?: "danger" | "primary";
 }
 
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+
 export function ConfirmDialog({
   isOpen,
   onClose,
@@ -26,22 +28,20 @@ export function ConfirmDialog({
   cancelText = "Cancel",
   variant = "primary",
 }: ConfirmDialogProps) {
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+  variant = "primary",
+}: ConfirmDialogProps) {
+  const containerRef = useFocusTrap(isOpen, onClose);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
     if (isOpen) {
-      window.addEventListener("keydown", handleEscape);
       document.body.style.overflow = "hidden";
     }
 
     return () => {
-      window.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -58,12 +58,15 @@ export function ConfirmDialog({
 
           {/* Dialog */}
           <motion.div
+            ref={containerRef}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
             className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-dark-900/90 shadow-2xl backdrop-blur-md"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
           >
             {/* Close button */}
             <button
