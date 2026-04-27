@@ -12,8 +12,28 @@ import Footer from "@/components/landing/Footer";
 export default function Home() {
   const router = useRouter();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "PayEasy",
+    description:
+      "Find roommates, split rent, and pay securely through Stellar blockchain escrow. Transparent, trustless, and effortless.",
+    applicationCategory: "FinanceApplication",
+    operatingSystem: "Web",
+    url: "https://payeasy.dev",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+  };
+
   return (
-    <main id="main-content">
+    <main id="main-content" aria-label="Landing Page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <PayEasyHero
         logo={<PayEasyLogo size={34} />}
         navigation={[

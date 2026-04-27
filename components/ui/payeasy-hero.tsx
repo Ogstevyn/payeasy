@@ -71,7 +71,7 @@ export function PayEasyHero({
   return (
     <section
       className={cn(
-        "relative w-full min-h-screen flex flex-col overflow-hidden",
+        "relative w-full min-h-[100svh] flex flex-col overflow-hidden",
         className
       )}
       style={{
@@ -365,7 +365,11 @@ export function PayEasyHero({
               },
             }}
           >
-            {[...programs, ...programs].map((program, index) => (
+            {[...programs, ...programs].map((program, index) => {
+              // #549 — only the first 2 visible cards are loaded eagerly;
+              // all duplicated / off-screen cards use lazy loading.
+              const isEager = index < 2;
+              return (
               <motion.div
                 key={index}
                 whileHover={{ scale: 1.04, y: -8 }}
@@ -378,6 +382,9 @@ export function PayEasyHero({
                   src={program.image}
                   alt={program.title}
                   fill
+                  priority={isEager}
+                  loading={isEager ? "eager" : "lazy"}
+                  sizes="(max-width: 640px) 80vw, 320px"
                   className="w-full h-full object-cover"
                 />
                 <div
@@ -395,7 +402,8 @@ export function PayEasyHero({
                   </h3>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </motion.div>
         </motion.div>
       )}

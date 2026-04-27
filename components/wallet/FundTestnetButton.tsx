@@ -34,7 +34,7 @@ export default function FundTestnetButton({
 
   const isTestnet = getCurrentNetwork() === "testnet";
 
-  // Cleanup timer on unmount
+  // Cleanup timer on unmount — must be before any conditional return
   useEffect(() => {
     return () => {
       if (pollTimerRef.current) {

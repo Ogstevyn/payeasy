@@ -256,13 +256,15 @@ function parseBoolRetval(retval: unknown): boolean {
   );
 }
 
-// ─── Contract state ───────────────────────────────────────────────────────────
+// ─── Full contract state ──────────────────────────────────────────────────────
 
 export interface ContractState {
   id: string;
   landlord: string;
   totalRent: string;
   deadline: string;
+  /** Unix timestamp (seconds) of the deadline, for numeric comparison. */
+  deadlineEpoch: number;
   status: "active" | "funded" | "released" | "expired";
   totalFunded: number;
   lastUpdate: string;
@@ -276,7 +278,7 @@ export interface ContractState {
 
 export async function getContractState(contractId: string): Promise<ContractState> {
   const { rpcServer, networkPassphrase } = await import("./config.ts");
-  const { TransactionBuilder, Account, Contract, Transaction, scValToNative, rpc } = await import("@stellar/stellar-sdk");
+  const { TransactionBuilder, Account, Contract, scValToNative, rpc: rpcHelpers } = await import("@stellar/stellar-sdk");
 
   const buildInvocationXdr = ({ contractId, method, args = [] }: BuildInvocationParams): string => {
     const contract = new Contract(contractId);
@@ -286,7 +288,7 @@ export async function getContractState(contractId: string): Promise<ContractStat
       fee: "100",
       networkPassphrase,
     })
-      .addOperation(contract.call(method, ...(args as Parameters<typeof contract.call>[1][])  ))
+      .addOperation(contract.call(method, ...(args as import("@stellar/stellar-sdk").xdr.ScVal[])))
       .setTimeout(60)
       .build();
 
@@ -295,17 +297,17 @@ export async function getContractState(contractId: string): Promise<ContractStat
 
   const ctx: QueryContext = {
     client: {
-      async simulateTransaction(xdrString: string): Promise<SimulateTransactionResponse> {
+      async simulateTransaction(xdrStr: string): Promise<SimulateTransactionResponse> {
         try {
-          const tx = new Transaction(xdrString, networkPassphrase);
+          const tx = TransactionBuilder.fromXDR(xdrStr, networkPassphrase);
           const result = await rpcServer.simulateTransaction(tx);
 
-          if (rpc.Api.isSimulationError(result)) {
+          if (rpcHelpers.Api.isSimulationError(result)) {
             return { error: result.error };
           }
 
           let retval: unknown = undefined;
-          if (result.result?.retval) {
+          if (rpcHelpers.Api.isSimulationSuccess(result) && result.result?.retval) {
             try {
               retval = scValToNative(result.result.retval);
             } catch {
@@ -321,14 +323,12 @@ export async function getContractState(contractId: string): Promise<ContractStat
         }
       },
     },
-    builder: {
-      buildInvocationXdr,
-    },
+    builder: { buildInvocationXdr },
     contractId,
   };
 
   try {
-    const [id, landlord, totalRent, deadline, totalFunded, isFunded] = await Promise.all([
+    const [id, landlord, totalRent, deadlineStr, totalFunded, isFunded] = await Promise.all([
       Promise.resolve(contractId),
       (async () => {
         try { return await getLandlord(ctx); }
@@ -355,20 +355,21 @@ export async function getContractState(contractId: string): Promise<ContractStat
       })(),
     ]);
 
+    const deadlineEpoch = parseInt(deadlineStr, 10);
     const status = isFunded ? "funded" as const : "active" as const;
-    const roommates: ContractState["roommates"] = [];
 
     return {
       id,
       landlord,
       totalRent,
-      deadline: new Date(parseInt(deadline) * 1000).toLocaleDateString("en-US", {
+      deadline: new Date(deadlineEpoch * 1000).toLocaleDateString("en-US", {
         year: "numeric", month: "short", day: "numeric",
       }),
+      deadlineEpoch,
       status,
       totalFunded,
       lastUpdate: new Date().toISOString(),
-      roommates,
+      roommates: [],
     };
   } catch (err) {
     if (err instanceof ContractQueryError) throw err;
@@ -394,9 +395,7 @@ export async function getAccountBalance(publicKey: string): Promise<number> {
 // ─── Horizon: fee stats ───────────────────────────────────────────────────────
 
 export interface FeeStats {
-  /** Base fee in stroops (smallest unit on Stellar; 1 XLM = 10^7 stroops). */
   baseFeeStroops: string;
-  /** Base fee in XLM as a trimmed decimal string (e.g. "0.00001"). */
   baseFeeXlm: string;
 }
 
@@ -412,13 +411,6 @@ type FetchLike = (
   init?: { signal?: AbortSignal }
 ) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>;
 
-/**
- * Fetches the current base network fee from Horizon `GET /fee_stats`.
- * Used before submitting a transaction to show an estimated network fee.
- *
- * Throws on network failure, non-2xx response, or malformed payload so callers
- * can decide how to present fallback UI (e.g. "Fee unavailable").
- */
 export async function getFeeStats(
   network: FeeStatsNetwork = "testnet",
   fetchImpl: FetchLike = fetch as unknown as FetchLike,

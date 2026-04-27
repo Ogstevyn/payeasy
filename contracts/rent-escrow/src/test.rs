@@ -230,6 +230,11 @@ fn test_share_sum_equals_rent_succeeds() {
     shares.set(Address::generate(&env), 600_i128);
     shares.set(Address::generate(&env), 400_i128);
     env.mock_all_auths();
+    let token_admin = Address::generate(&env);
+    let token_address = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
+    env.mock_all_auths();
     client.initialize(&landlord, &token_address, &1000_i128, &TEST_DEADLINE, &shares);
     assert_eq!(client.get_amount(), 1000_i128);
 }
@@ -293,6 +298,9 @@ fn test_full_flow_scenario() {
     let roommate_c = Address::generate(&env);
 
     let token_admin = Address::generate(&env);
+    let token_address = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
     let token_address = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
     let token = token::Client::new(&env, &token_address);
     let token_admin_client = token::StellarAssetClient::new(&env, &token_address);

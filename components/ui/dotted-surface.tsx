@@ -6,12 +6,43 @@ import React, { useEffect, useRef } from "react";
 
 type DottedSurfaceProps = Omit<React.ComponentProps<"div">, "ref">;
 
+function isWebGLAvailable(): boolean {
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(
+      canvas.getContext("webgl") ||
+      canvas.getContext("experimental-webgl")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isLowEndDevice(): boolean {
+  return (
+    typeof navigator !== "undefined" &&
+    typeof navigator.hardwareConcurrency === "number" &&
+    navigator.hardwareConcurrency < 4
+  );
+}
+
 export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
   const { theme } = useTheme();
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!isWebGLAvailable()) {
+      console.warn(
+        "[DottedSurface] WebGL is not available in this browser. Skipping Three.js renderer."
+      );
+      return;
+    }
+
+    if (isLowEndDevice()) {
+      return;
+    }
+
     const container = containerRef.current;
 
     if (!container) {
@@ -19,7 +50,7 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
     }
 
     let isDisposed = false;
-    let cleanupScene = () => {};
+    let cleanupScene = () => { };
 
     const loadScene = async () => {
       const THREE = await import("three");
@@ -87,7 +118,7 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
         new THREE.Float32BufferAttribute(colors, 3)
       );
 
-      const material = new THREE.PointsMaterial({
+      const material = new TßHREE.PointsMaterial({
         size: 6,
         vertexColors: true,
         transparent: true,
@@ -101,8 +132,12 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
       let count = 0;
       let animationId = 0;
 
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
       const animate = () => {
-        animationId = window.requestAnimationFrame(animate);
+        if (!prefersReducedMotion) {
+          animationId = window.requestAnimationFrame(animate);
+        }
 
         const positionAttribute = geometry.attributes.position;
         const posArray = positionAttribute.array as Float32Array;
@@ -129,6 +164,9 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        if (prefersReducedMotion) {
+          renderer.render(scene, camera);
+        }
       };
 
       window.addEventListener("resize", handleResize);

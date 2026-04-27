@@ -12,6 +12,9 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import { useBeforeUnload } from "@/hooks/useBeforeUnload";
 import RoommateInput from "./RoommateInput";
 import { FieldError, fieldBorderClass } from "@/components/ui/field-error";
+import { DateInput } from "@/components/ui/date-input";
+import { isDateOnOrAfterTomorrow } from "@/components/ui/date-input.helpers";
+import { StepIndicator } from "@/components/ui/step-indicator";
 import {
   calculateRemainingAmount,
   formatFeeEstimate,
@@ -383,7 +386,10 @@ export default function CreateEscrowForm({
   }
 
   return (
-    <section className="max-w-3xl mx-auto rounded-3xl glass p-6 sm:p-8">
+    <section className="max-w-3xl mx-auto rounded-3xl glass overflow-hidden transition-all duration-500">
+      <StepIndicator steps={STEP_LABELS} currentStep={step} />
+      
+      <div className="p-6 sm:p-8 pt-0">
       {hasDraft && (
         <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-brand-400/40 bg-brand-500/10 p-4 text-sm animate-fade-in">
           <p className="text-brand-100 font-medium">You have an unsaved draft. Resume?</p>
@@ -418,28 +424,6 @@ export default function CreateEscrowForm({
         </p>
       </header>
 
-      <div className="mb-8 grid grid-cols-4 gap-2">
-        {STEP_LABELS.map((label, index) => {
-          const stepNumber = index + 1;
-          const isComplete = stepNumber < step;
-          const isCurrent = stepNumber === step;
-
-          return (
-            <div
-              key={label}
-              className={`rounded-xl border px-3 py-2 text-center text-xs sm:text-sm ${
-                isCurrent
-                  ? "border-brand-400 bg-brand-500/20 text-brand-100"
-                  : isComplete
-                    ? "border-accent-400/60 bg-accent-500/15 text-accent-100"
-                    : "border-white/10 bg-white/5 text-dark-500"
-              }`}
-            >
-              {label}
-            </div>
-          );
-        })}
-      </div>
 
       {errors.length > 0 ? (
         <div className="mb-6 rounded-xl border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-200">
@@ -680,6 +664,7 @@ export default function CreateEscrowForm({
           </button>
         )}
       </footer>
+      </div>
     </section>
   );
 }

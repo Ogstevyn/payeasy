@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ConnectWalletButton from "@/components/wallet/ConnectWalletButton";
 
 export default function Navbar() {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -23,6 +25,7 @@ export default function Navbar() {
 
   return (
     <nav
+      aria-label="Main Navigation"
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
           ? "glass py-3 shadow-lg shadow-black/20"
@@ -58,6 +61,14 @@ export default function Navbar() {
           <a href="#" className="btn-secondary !py-2.5 !px-5 !text-sm !rounded-lg">
             Sign In
           </a>
+          <a
+            href="#"
+            className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg"
+            onMouseEnter={() => router.prefetch("/connect")}
+          >
+            <Wallet size={16} />
+            Connect Wallet
+          </a>
           <ConnectWalletButton />
         </div>
 
@@ -88,6 +99,14 @@ export default function Navbar() {
             <div className="h-px bg-white/10 my-2" />
             <a href="#" className="btn-secondary !justify-center">
               Sign In
+            </a>
+            <a
+              href="#"
+              className="btn-primary !justify-center"
+              onMouseEnter={() => router.prefetch("/connect")}
+            >
+              <Wallet size={16} />
+              Connect Wallet
             </a>
             <div className="flex justify-center">
               <ConnectWalletButton />

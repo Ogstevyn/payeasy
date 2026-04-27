@@ -1,78 +1,161 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import EscrowStatus from "@/components/escrow/EscrowStatus";
 import FundingProgress from "@/components/escrow/FundingProgress";
 import MultiSigApproval from "@/components/escrow/MultiSigApproval";
-import RoommateList, { type Roommate } from "@/components/escrow/RoommateList";
+import RoommateTable from "@/components/escrow/RoommateTable";
+import ContributeForm from "@/components/escrow/ContributeForm";
 import EscrowDashboardSkeleton from "@/components/escrow/EscrowDashboardSkeleton";
-import { ChevronLeft, ExternalLink, ShieldCheck, Activity, Globe } from "lucide-react";
+import TransactionReview from "@/components/wallet/TransactionReview";
+import {
+  ChevronLeft,
+  ExternalLink,
+  ShieldCheck,
+  Activity,
+  Globe,
+  AlertCircle,
+  Loader2,
+  ArrowUpRight,
+  RotateCcw,
+} from "lucide-react";
 import Link from "next/link";
 import { getExplorerLink } from "@/lib/stellar/explorer";
 import { createLandlordMajorityConfig } from "@/lib/stellar/multisig";
 import RefreshIndicator from "@/components/escrow/RefreshIndicator";
+import { useStellar } from "@/context/StellarContext";
+import { claimRefund, stroopsToXlm } from "@/lib/stellar/actions/claimRefund";
+import useContractPolling from "@/hooks/useContractPolling";
+import { buildReleaseXdr, signAndSubmitRelease } from "@/lib/stellar/actions/release";
+import { useToast } from "@/hooks/useToast";
+import CopyButton from "@/components/ui/copy-button";
+import { DeadlineCountdown } from "@/components/escrow/DeadlineCountdown";
 
 interface Props {
   contractId: string;
 }
 
-interface ContractState {
-  id: string;
-  landlord: string;
-  totalRent: string;
-  deadline: string;
-  status: "active" | "funded" | "released" | "expired";
-  totalFunded: number;
-  lastUpdate: string;
-  roommates: Roommate[];
+type ReleasePhase = "idle" | "building" | "review" | "submitting";
+
+function formatContractId(contractId: string): string {
+  if (contractId.length <= 10) return contractId;
+  return `${contractId.slice(0, 4)}...${contractId.slice(-4)}`;
 }
 
 export default function EscrowDashboardClient({ contractId }: Props) {
-  const [contractState, setContractState] = useState<ContractState | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { contractState, isLoading, error, refresh } = useContractPolling(contractId);
+  const { isConnected, publicKey } = useStellar();
+  const toast = useToast();
 
-  useEffect(() => {
-    // Artificial 3s delay to verify skeleton renders before content
-    fetchData();
-  }, [contractId]);
+  const [releasePhase, setReleasePhase] = useState<ReleasePhase>("idle");
+  const [preparedXdr, setPreparedXdr] = useState<string | null>(null);
+  const [releaseError, setReleaseError] = useState<string | null>(null);
+  const [isClaimingRefund, setIsClaimingRefund] = useState(false);
 
-  const fetchData = async () => {
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        setContractState({
-          id: contractId,
-          landlord: "GD7K4X5L7P2Q9F6N1M3R8S4T0U1V2W3X4Y5Z6A7B8C9D0E1F2G",
-          totalRent: "1250",
-          deadline: "April 05, 2026",
-          status: "active",
-          totalFunded: 775,
-          lastUpdate: new Date().toISOString(),
-          roommates: [
-            {
-              address: "GA3X2Y1Z0W9V8U7T6S5R4Q3P2O1N0M9L8K7J6I5H4G3F2E1D0C",
-              expectedShare: "450",
-              paidAmount: "450",
-              isPaid: true,
-            },
-            {
-              address: "GB5X4Y3Z2W1V0U9T8S7R6Q5P4O3N2M1L0K9J8I7H6G5F4E3D2C",
-              expectedShare: "450",
-              paidAmount: "325",
-              isPaid: false,
-            },
-            {
-              address: "GC7X6Y5Z4W3V2U1T0S9R8Q7P6O5N4M3L2K1J0I9H8G7F6E5D4C",
-              expectedShare: "350",
-              paidAmount: "0",
-              isPaid: false,
-            },
-          ],
-        });
-        setIsLoading(false);
-        resolve();
-      }, 1000);
-    });
-  };
+  const isLandlord =
+    isConnected &&
+    publicKey !== null &&
+    contractState !== null &&
+    publicKey === contractState.landlord;
+
+  const currentRoommate = contractState?.roommates.find(
+    (r) => r.address === publicKey
+  );
+
+  // #550 — memoize derived values so they don't recompute on unrelated state changes.
+  const totalFunded = useMemo(
+    () =>
+      contractState
+        ? contractState.roommates.reduce(
+            (sum, r) => sum + Number(r.paidAmount),
+            0
+          )
+        : 0,
+    [contractState]
+  );
+
+  const fundingPercentage = useMemo(() => {
+    if (!contractState || Number(contractState.totalRent) === 0) return 0;
+    return Math.min(
+      100,
+      (totalFunded / Number(contractState.totalRent)) * 100
+    );
+  }, [contractState, totalFunded]);
+
+  const roommateStatusMap = useMemo(() => {
+    if (!contractState) return new Map<string, boolean>();
+    return new Map(
+      contractState.roommates.map((r) => [r.address, r.isPaid])
+    );
+  }, [contractState]);
+
+  const nowEpoch = Math.floor(Date.now() / 1000);
+  const isDeadlinePassed =
+    contractState != null && nowEpoch > contractState.deadlineEpoch;
+  const isNotFullyFunded = contractState?.status !== "funded";
+  const hasNonZeroPaid =
+    currentRoommate != null && BigInt(currentRoommate.paidAmount) > BigInt(0);
+  const showClaimRefundButton = isDeadlinePassed && isNotFullyFunded && hasNonZeroPaid;
+
+  async function handleReleaseFunds() {
+    if (!contractState) return;
+    setReleasePhase("building");
+    setReleaseError(null);
+    try {
+      const xdr = await buildReleaseXdr({
+        contractId,
+        landlordAddress: contractState.landlord,
+      });
+      setPreparedXdr(xdr);
+      setReleasePhase("review");
+    } catch (err) {
+      setReleaseError(err instanceof Error ? err.message : "Failed to prepare transaction.");
+      setReleasePhase("idle");
+    }
+  }
+
+  async function handleConfirmRelease() {
+    if (!preparedXdr || !contractState) return;
+    setReleasePhase("submitting");
+    try {
+      await signAndSubmitRelease(preparedXdr, contractState.landlord);
+      toast.success("Funds released to landlord.");
+      setReleasePhase("idle");
+      setPreparedXdr(null);
+      setReleaseError(null);
+      await refresh();
+    } catch (err) {
+      setReleaseError(err instanceof Error ? err.message : "Transaction failed.");
+      setReleasePhase("idle");
+    }
+  }
+
+  function handleCancelRelease() {
+    setReleasePhase("idle");
+    setPreparedXdr(null);
+    setReleaseError(null);
+  }
+
+  const handleClaimRefund = useCallback(async () => {
+    if (!publicKey || !contractState) return;
+    setIsClaimingRefund(true);
+    try {
+      const result = await claimRefund({
+        contractId,
+        roommateAddress: publicKey,
+        deadlineTimestamp: contractState.deadlineEpoch,
+        refundableAmount: currentRoommate?.paidAmount,
+      });
+      const xlmAmount = stroopsToXlm(result.refundedAmount);
+      toast.success(`Refund of ${xlmAmount} XLM sent.`);
+      await refresh();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Refund failed.";
+      toast.error(message);
+    } finally {
+      setIsClaimingRefund(false);
+    }
+  }, [publicKey, contractState, contractId, currentRoommate, refresh, toast]);
 
   const multiSigConfig = contractState
     ? createLandlordMajorityConfig({
@@ -82,10 +165,26 @@ export default function EscrowDashboardClient({ contractId }: Props) {
       })
     : null;
 
+  const truncatedContractId = formatContractId(contractId);
+
   return (
-    <main id="main-content" className="min-h-screen pt-32 pb-24 relative overflow-hidden bg-[#07070a]">
+    <main id="main-content" aria-label="Escrow Dashboard" className="min-h-screen pt-32 pb-24 relative overflow-hidden bg-[#07070a]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(92,124,250,0.1),transparent_50%)] pointer-events-none" />
       <div className="mesh-gradient opacity-30 mix-blend-screen pointer-events-none fixed inset-0 saturate-150" />
+
+      {/* TransactionReview modal overlay */}
+      {(releasePhase === "review" || releasePhase === "submitting") && preparedXdr && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <TransactionReview
+            xdr={preparedXdr}
+            network="testnet"
+            destination={contractState?.landlord}
+            onConfirm={handleConfirmRelease}
+            onCancel={handleCancelRelease}
+            isSubmitting={releasePhase === "submitting"}
+          />
+        </div>
+      )}
 
       <div className="container relative z-10 mx-auto px-6 max-w-6xl">
         {/* Navigation Breadcrumb */}
@@ -110,14 +209,16 @@ export default function EscrowDashboardClient({ contractId }: Props) {
             </div>
             <div className="flex items-center gap-3">
               <p className="text-[10px] text-dark-500 font-black uppercase tracking-widest truncate max-w-[140px] md:max-w-none font-mono">
-                CX: {contractId}
+                CX: {truncatedContractId}
               </p>
+              <CopyButton value={contractId} label="Copy full contract ID" />
               <a
                 href={getExplorerLink("contract", contractId)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1.5 rounded-lg text-dark-500 hover:text-brand-400 hover:bg-white/5 transition-all outline-none"
                 title="View on Stellar Expert"
+                aria-label="View on Stellar Expert"
               >
                 <ExternalLink className="h-4 w-4" />
               </a>
@@ -143,7 +244,10 @@ export default function EscrowDashboardClient({ contractId }: Props) {
               <span className="text-white font-black italic">Stellar Ledger</span>.
             </p>
             <div className="h-16 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent hidden md:block" />
-            <RefreshIndicator onRefresh={fetchData} />
+            <div className="flex flex-wrap items-center gap-6">
+              <DeadlineCountdown deadlineEpoch={contractState?.deadlineEpoch || 0} />
+              <RefreshIndicator onRefresh={refresh} />
+            </div>
           </div>
         </header>
 
@@ -151,17 +255,64 @@ export default function EscrowDashboardClient({ contractId }: Props) {
         <div className="space-y-12">
           {isLoading ? (
             <EscrowDashboardSkeleton />
+          ) : error ? (
+            <div className="flex flex-col items-center text-center space-y-6 animate-in fade-in">
+              <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20">
+                <AlertCircle className="h-12 w-12 text-red-400" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black text-white">Unable to Load Contract</h2>
+                <p className="text-dark-400 text-base max-w-md mx-auto">{error}</p>
+              </div>
+              <button
+                onClick={() => void refresh()}
+                className="btn-primary px-6 py-3 rounded-xl font-black uppercase tracking-widest"
+              >
+                Retry
+              </button>
+            </div>
           ) : (
             <div
               className="space-y-12 animate-in fade-in duration-700 ease-out"
               style={{ animationFillMode: "backwards" }}
             >
-              <EscrowStatus
-                landlordAddress={contractState!.landlord}
-                totalRent={contractState!.totalRent}
-                deadline={contractState!.deadline}
-                status={contractState!.status}
-              />
+              <div className="space-y-4">
+                <EscrowStatus
+                  landlordAddress={contractState!.landlord}
+                  totalRent={contractState!.totalRent}
+                  deadline={contractState!.deadline}
+                  status={contractState!.status}
+                />
+
+                {/* Release Funds — landlord only */}
+                {isLandlord && (
+                  <div className="flex flex-col gap-3">
+                    {releaseError && (
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        {releaseError}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => void handleReleaseFunds()}
+                      disabled={releasePhase !== "idle"}
+                      className="inline-flex items-center gap-2 w-full sm:w-auto justify-center btn-primary !py-3 !px-6 !rounded-xl font-black uppercase tracking-widest shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {releasePhase === "building" ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Preparing...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowUpRight className="h-4 w-4" />
+                          Release Funds
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <FundingProgress
@@ -187,7 +338,52 @@ export default function EscrowDashboardClient({ contractId }: Props) {
                 </div>
               </div>
 
-              <RoommateList roommates={contractState!.roommates} />
+              <RoommateTable roommates={contractState!.roommates} />
+
+              {/* Contribute Form — visible only to the current roommate if they haven't paid full share */}
+              {currentRoommate && !currentRoommate.isPaid && contractState?.status !== "funded" && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  <ContributeForm
+                    escrowId={contractId}
+                    expectedShare={currentRoommate.expectedShare}
+                    remainingBalance={(
+                      Number(currentRoommate.expectedShare) - Number(currentRoommate.paidAmount)
+                    ).toFixed(2).replace(/\.00$/, "")}
+                    onSuccess={() => void refresh()}
+                  />
+                </div>
+              )}
+
+              {/* Claim Refund — visible only when eligible */}
+              {showClaimRefundButton && (
+                <div className="glass-card p-8 flex flex-col sm:flex-row items-center justify-between gap-6 border border-amber-500/20 bg-amber-500/5">
+                  <div className="space-y-1 text-center sm:text-left">
+                    <h3 className="text-white font-black text-lg uppercase tracking-widest">
+                      Refund Available
+                    </h3>
+                    <p className="text-dark-400 text-sm">
+                      The funding deadline has passed and the escrow was not fully funded. You can reclaim your deposit.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => void handleClaimRefund()}
+                    disabled={isClaimingRefund}
+                    className="btn-primary !w-full sm:!w-auto !justify-center !py-3 !px-8 !rounded-xl font-black uppercase tracking-widest flex items-center gap-2 shrink-0 disabled:opacity-50"
+                  >
+                    {isClaimingRefund ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Claiming...
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="h-4 w-4" />
+                        Claim Refund
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
 
               <MultiSigApproval config={multiSigConfig!} mockMode />
             </div>

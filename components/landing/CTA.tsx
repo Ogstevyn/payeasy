@@ -2,11 +2,14 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function CTA() {
+  const router = useRouter();
+
   return (
-    <section className="py-24 px-6">
+    <section aria-label="Join PayEasy" className="py-24 px-6">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -32,6 +35,10 @@ export default function CTA() {
               <Link
                 href="/connect"
                 className="btn-primary !py-4 !px-10 !text-lg !rounded-xl group"
+                onMouseEnter={() => {
+                  router.prefetch("/connect");
+                  router.prefetch("/escrow/create");
+                }}
               >
                 Get Started
                 <ArrowRight
