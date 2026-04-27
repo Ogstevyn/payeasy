@@ -166,6 +166,7 @@ payeasy/
 - Browse the [issues.md](issues.md) file or the [Issues](https://github.com/Ogstevyn/payeasy/issues) tab.
 - Look for issues labeled `good first issue` if you're new.
 - **Strict 4-Hour Rule**: Once assigned, you have **4 hours** to submit a PR. If not, the issue will be re-assigned.
+- **Automated Merging**: PRs passing all CI tests and marked with the `automerge` label by a maintainer will be automatically merged into `main`.
 - Comment on the issue to let others know you're working on it.
 - Wait for a maintainer to assign it to you.
 

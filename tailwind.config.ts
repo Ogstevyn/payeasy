@@ -39,7 +39,7 @@ const config: Config = {
           300: "#dee2e6",
           400: "#ced4da",
           500: "#adb5bd",
-          600: "#868e96",
+          600: "#9ca3af",
           700: "#495057",
           800: "#343a40",
           900: "#212529",
@@ -47,8 +47,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
-        display: ["Inter", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "system-ui", "-apple-system", "sans-serif"],
+        display: ["var(--font-space-grotesk)", "system-ui", "sans-serif"],
+        mono: ["var(--font-jetbrains-mono)", "ui-monospace", "monospace"],
       },
       animation: {
         "fade-in": "fadeIn 0.6s ease-out forwards",

@@ -6,6 +6,7 @@
   <a href="https://github.com/Ogstevyn/payeasy/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
   <a href="https://github.com/Ogstevyn/payeasy/stargazers"><img src="https://img.shields.io/github/stars/Ogstevyn/payeasy?style=social" alt="Stars" /></a>
   <a href="https://stellar.org"><img src="https://img.shields.io/badge/powered%20by-Stellar-brightgreen" alt="Stellar" /></a>
+  <a href="https://github.com/Ogstevyn/payeasy/actions/workflows/ci.yml"><img src="https://github.com/Ogstevyn/payeasy/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
 </p>
 
 ---
