@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { Menu, X, Wallet } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -57,7 +59,11 @@ export default function Navbar() {
           <a href="#" className="btn-secondary !py-2.5 !px-5 !text-sm !rounded-lg">
             Sign In
           </a>
-          <a href="#" className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg">
+          <a
+            href="#"
+            className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg"
+            onMouseEnter={() => router.prefetch("/connect")}
+          >
             <Wallet size={16} />
             Connect Wallet
           </a>
@@ -91,7 +97,11 @@ export default function Navbar() {
             <a href="#" className="btn-secondary !justify-center">
               Sign In
             </a>
-            <a href="#" className="btn-primary !justify-center">
+            <a
+              href="#"
+              className="btn-primary !justify-center"
+              onMouseEnter={() => router.prefetch("/connect")}
+            >
               <Wallet size={16} />
               Connect Wallet
             </a>
