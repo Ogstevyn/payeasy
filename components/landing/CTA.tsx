@@ -2,8 +2,11 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function CTA() {
+  const router = useRouter();
+
   return (
     <section className="py-24 px-6">
       <motion.div
@@ -31,6 +34,10 @@ export default function CTA() {
               <a
                 href="#"
                 className="btn-primary !py-4 !px-10 !text-lg !rounded-xl group"
+                onMouseEnter={() => {
+                  router.prefetch("/connect");
+                  router.prefetch("/escrow/create");
+                }}
               >
                 Get Started
                 <ArrowRight
