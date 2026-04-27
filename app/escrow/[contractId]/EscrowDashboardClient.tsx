@@ -42,6 +42,7 @@ function formatContractId(contractId: string): string {
   return `${contractId.slice(0, 4)}...${contractId.slice(-4)}`;
 }
 
+
 export default function EscrowDashboardClient({ contractId }: Props) {
   const { contractState, isLoading, error, refresh } = useContractPolling(contractId);
   const { isConnected, publicKey } = useStellar();

@@ -47,7 +47,7 @@ export default function TermsPage() {
           <section className="space-y-4">
             <h2 className="text-2xl font-bold text-white tracking-tight">3. Limitation of Liability</h2>
             <p>
-              PayEasy is provided "as is" without warranties of any kind. 
+              PayEasy is provided &quot;as is&quot; without warranties of any kind.
               We are not responsible for any loss of funds due to smart contract bugs, network failures, 
               or user error.
             </p>

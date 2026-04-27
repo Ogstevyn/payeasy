@@ -79,7 +79,6 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-6">
             <NetworkIndicator />
-            <a href="#" className="text-dark-600 hover:text-dark-400 text-xs transition-colors">
             <Link href="/privacy" className="text-dark-600 hover:text-dark-400 text-xs transition-colors">
               Privacy Policy
             </Link>

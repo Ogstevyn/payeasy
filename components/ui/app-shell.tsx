@@ -16,6 +16,7 @@ const isLowEnd =
   typeof navigator.hardwareConcurrency === "number" &&
   navigator.hardwareConcurrency < 4;
 
+function AppShell({ children }: { children: React.ReactNode }) {
   const { announcement } = useStellar();
   const [liveMessage, setLiveMessage] = useState<string | null>(null);
 
