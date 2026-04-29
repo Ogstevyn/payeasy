@@ -746,3 +746,92 @@ implement persistent storage TTL extension so the agreement doesn't expire.
 
 **Test Requirements**  
 - N/A
+
+---
+
+## Stage 9: Frontend Polish (Issues 41–44)
+
+### [Issue #41] Wallet: Fund Testnet Button Not Wired Up
+**Description**  
+The "Fund Testnet" quick-action button on the wallet page (`app/wallet/page.tsx`, line 120) renders with no `onClick` handler, so clicking it does nothing. A `FundTestnetButton` component already exists in `components/wallet/FundTestnetButton.tsx` and handles the Friendbot funding flow — the inline button should be replaced with it.
+
+**Requirements**  
+- Remove the inert `<button>` at lines 119–126 of `app/wallet/page.tsx`.  
+- Import and render `<FundTestnetButton publicKey={walletData?.address ?? ""} />` in its place.  
+- The button must only be visible when `walletData?.network === "testnet"` (condition is already present).
+
+**Acceptance Criteria**  
+- Clicking "Fund Testnet" on the wallet page triggers the Friendbot request and shows toast feedback.  
+- The button does not appear on mainnet.
+
+**Files to Create/Modify**  
+- `app/wallet/page.tsx` (Modify)
+
+**Test Requirements**  
+- Verify clicking the button triggers the funding flow; confirm it is absent when network is not testnet.
+
+---
+
+### [Issue #42] History: "Latest First" Sort Button Has No Handler
+**Description**  
+The sort button in `components/history/TransactionList.tsx` (line 103) renders the label "Latest First" but has no `onClick` handler — clicking it does nothing. The transaction list should toggle between newest-first and oldest-first order, and the button label should reflect the current sort direction.
+
+**Requirements**  
+- Add a `sortOrder` state (`"desc" | "asc"`, default `"desc"`) to `TransactionList`.  
+- Wire the button's `onClick` to toggle `sortOrder` between `"desc"` and `"asc"`.  
+- Update the button label to read **"Latest First"** when `sortOrder === "desc"` and **"Oldest First"** when `"asc"`.  
+- Sort `filteredTransactions` (inside its existing `useMemo`) by `transaction.timestamp` according to `sortOrder` before returning.
+
+**Acceptance Criteria**  
+- Clicking the button reverses the transaction list order.  
+- The button label reflects the active sort direction.
+
+**Files to Create/Modify**  
+- `components/history/TransactionList.tsx` (Modify)
+
+**Test Requirements**  
+- Render with mock transactions; click sort button; confirm list order inverts and label changes.
+
+---
+
+### [Issue #43] History: Retry Button Silently Redirects to Create Escrow When contractId Is Missing
+**Description**  
+In `components/history/TransactionCard.tsx` (lines 151–167), the "Retry" button for failed transactions falls back to `router.push("/escrow/create")` when `transaction.contractId` is absent. This silently starts a brand-new escrow instead of retrying the failed one, which is confusing and destructive. The button should only appear when a `contractId` is available to navigate to.
+
+**Requirements**  
+- Wrap the entire retry `<button>` in a conditional: only render it when `transaction.status === "failed" && transaction.contractId`.  
+- Remove the `else` branch that redirects to `/escrow/create`.  
+- Add `aria-label={`Retry transaction for escrow ${transaction.contractId}`}` to the button.
+
+**Acceptance Criteria**  
+- Failed transactions without a `contractId` do not show a Retry button.  
+- Failed transactions with a `contractId` show the button, and clicking it navigates to `/escrow/{contractId}`.
+
+**Files to Create/Modify**  
+- `components/history/TransactionCard.tsx` (Modify)
+
+**Test Requirements**  
+- Render a failed card without `contractId`; confirm no Retry button.  
+- Render a failed card with `contractId`; confirm Retry navigates correctly.
+
+---
+
+### [Issue #44] Escrow: Demo Mode Warning Only Shown at Final Review Step
+**Description**  
+`components/escrow/CreateEscrowForm.tsx` (lines 626–630) shows a "Demo mode is active" notice only at Step 4 (the final review), after the user has already filled out all three preceding steps. Users who are not in demo mode may not notice this until they are about to submit. A prominent banner should be shown at Step 1 so contributors know from the start that transactions will not execute on-chain.
+
+**Requirements**  
+- At the top of the Step 1 section, add a dismissible amber banner when `contractClient` is `null` / `undefined`.  
+- The banner must include an info icon and the text: *"Demo mode: transactions will not be executed on-chain. Results are simulated only."*  
+- The existing Step 4 inline note may remain as a secondary reminder.
+
+**Acceptance Criteria**  
+- When `contractClient` is not provided, the amber banner is visible as soon as Step 1 renders.  
+- When `contractClient` is provided, the banner does not render.
+
+**Files to Create/Modify**  
+- `components/escrow/CreateEscrowForm.tsx` (Modify)
+
+**Test Requirements**  
+- Render form without `contractClient`; confirm banner appears on Step 1.  
+- Render form with `contractClient`; confirm banner is absent.
