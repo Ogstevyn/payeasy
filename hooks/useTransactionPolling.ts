@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 
 export interface HasTxHash {
   txHash: string;
@@ -62,56 +62,4 @@ export default function useTransactionPolling<T extends HasTxHash>({
       window.clearInterval(interval);
     };
   }, [enabled, currentTransactions, fetchLatest, onNewTransactions, intervalMs]);
-}
-
-// ─── Horizon SSE stream ────────────────────────────────────────────────────────
-
-const HORIZON_TESTNET = "https://horizon-testnet.stellar.org";
-
-export interface UseHorizonStreamOptions {
-  /** Stellar account ID to stream transactions for. Pass null to disable. */
-  accountId: string | null;
-  horizonUrl?: string;
-  /** Called whenever Horizon pushes a new transaction event. */
-  onNewTransaction: () => void;
-}
-
-/**
- * Opens a Horizon Server-Sent Events stream for the given account on mount
- * and closes it on unmount. Calls `onNewTransaction` each time a new
- * transaction event arrives without triggering unnecessary re-subscriptions.
- */
-export function useHorizonStream({
-  accountId,
-  horizonUrl = HORIZON_TESTNET,
-  onNewTransaction,
-}: UseHorizonStreamOptions): { isStreaming: boolean } {
-  const [isStreaming, setIsStreaming] = useState(false);
-  const callbackRef = useRef(onNewTransaction);
-
-  // Keep ref current without reopening the stream on every render.
-  useEffect(() => {
-    callbackRef.current = onNewTransaction;
-  });
-
-  useEffect(() => {
-    if (!accountId) {
-      setIsStreaming(false);
-      return;
-    }
-
-    const url = `${horizonUrl}/accounts/${encodeURIComponent(accountId)}/transactions?cursor=now`;
-    const es = new EventSource(url);
-
-    es.onopen = () => setIsStreaming(true);
-    es.onmessage = () => void callbackRef.current();
-    es.onerror = () => setIsStreaming(false);
-
-    return () => {
-      es.close();
-      setIsStreaming(false);
-    };
-  }, [accountId, horizonUrl]);
-
-  return { isStreaming };
 }

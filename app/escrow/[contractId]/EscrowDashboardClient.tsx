@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo } from "react";
 import EscrowStatus from "@/components/escrow/EscrowStatus";
-import EventLog from "@/components/escrow/EventLog";
 import FundingProgress from "@/components/escrow/FundingProgress";
 import MultiSigApproval from "@/components/escrow/MultiSigApproval";
 import RoommateTable from "@/components/escrow/RoommateTable";
@@ -27,13 +26,10 @@ import RefreshIndicator from "@/components/escrow/RefreshIndicator";
 import { useStellar } from "@/context/StellarContext";
 import { claimRefund, stroopsToXlm } from "@/lib/stellar/actions/claimRefund";
 import useContractPolling from "@/hooks/useContractPolling";
-import { useEscrowEvents } from "@/hooks/useEscrowEvents";
 import { buildReleaseXdr, signAndSubmitRelease } from "@/lib/stellar/actions/release";
 import { useToast } from "@/hooks/useToast";
 import CopyButton from "@/components/ui/copy-button";
 import { DeadlineCountdown } from "@/components/escrow/DeadlineCountdown";
-import { rpcServer } from "@/lib/stellar/config";
-import type { SorobanRpcServer } from "@/lib/stellar/events";
 
 interface Props {
   contractId: string;
@@ -51,12 +47,6 @@ export default function EscrowDashboardClient({ contractId }: Props) {
   const { contractState, isLoading, error, refresh } = useContractPolling(contractId);
   const { isConnected, publicKey } = useStellar();
   const toast = useToast();
-
-  // Cast rpcServer to the local SorobanRpcServer interface used by useEscrowEvents.
-  const { events: contractEvents } = useEscrowEvents(contractId, {
-    server: rpcServer as unknown as SorobanRpcServer,
-    intervalMs: 30_000,
-  });
 
   const [releasePhase, setReleasePhase] = useState<ReleasePhase>("idle");
   const [preparedXdr, setPreparedXdr] = useState<string | null>(null);
@@ -350,15 +340,6 @@ export default function EscrowDashboardClient({ contractId }: Props) {
               </div>
 
               <RoommateTable roommates={contractState!.roommates} />
-
-              {/* Contract event log — reverse-chronological, polls every 30 s */}
-              <section className="glass-card p-8">
-                <h2 className="text-lg font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3">
-                  <Activity className="h-5 w-5 text-brand-400" />
-                  Event Log
-                </h2>
-                <EventLog events={contractEvents} />
-              </section>
 
               {/* Contribute Form — visible only to the current roommate if they haven't paid full share */}
               {currentRoommate && !currentRoommate.isPaid && contractState?.status !== "funded" && (
