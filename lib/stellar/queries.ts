@@ -396,6 +396,20 @@ export async function getAccountBalance(publicKey: string): Promise<number> {
   }
 }
 
+export async function getNativeBalance(publicKey: string): Promise<string> {
+  const { fetchXlmBalance } = await import("./horizon.ts");
+  const { getCurrentNetwork } = await import("./explorer.ts");
+
+  try {
+    return await fetchXlmBalance(publicKey, getCurrentNetwork());
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("not found")) {
+      throw new Error(`Account not found: ${publicKey}`);
+    }
+    throw err;
+  }
+}
+
 // ─── Horizon: fee stats ───────────────────────────────────────────────────────
 
 export interface FeeStats {

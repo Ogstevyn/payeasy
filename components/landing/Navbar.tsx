@@ -7,9 +7,11 @@ import { useRouter } from "next/navigation";
 import ConnectWalletButton from "@/components/wallet/ConnectWalletButton";
 import { useActiveSection } from "@/hooks/useActiveSection";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useStellar } from "@/context/StellarContext";
 
 export default function Navbar() {
   const router = useRouter();
+  const { isConnected } = useStellar();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -70,17 +72,20 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          <a href="#" className="btn-secondary !py-2.5 !px-5 !text-sm !rounded-lg">
-            Sign In
-          </a>
-          <a
-            href="#"
+          <Link
+            href={isConnected ? "/escrow/create" : "/connect"}
+            className="btn-secondary !py-2.5 !px-5 !text-sm !rounded-lg"
+          >
+            {isConnected ? "Dashboard" : "Sign In"}
+          </Link>
+          <Link
+            href="/connect"
             className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg"
             onMouseEnter={() => router.prefetch("/connect")}
           >
             <Wallet size={16} />
             Connect Wallet
-          </a>
+          </Link>
           <ConnectWalletButton />
           <ThemeToggle />
         </div>
@@ -110,17 +115,22 @@ export default function Navbar() {
               </a>
             ))}
             <div className="h-px bg-white/10 my-2" />
-            <a href="#" className="btn-secondary !justify-center">
-              Sign In
-            </a>
-            <a
-              href="#"
+            <Link
+              href={isConnected ? "/escrow/create" : "/connect"}
+              className="btn-secondary !justify-center"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {isConnected ? "Dashboard" : "Sign In"}
+            </Link>
+            <Link
+              href="/connect"
               className="btn-primary !justify-center"
               onMouseEnter={() => router.prefetch("/connect")}
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <Wallet size={16} />
               Connect Wallet
-            </a>
+            </Link>
             <div className="flex justify-center gap-3">
               <ConnectWalletButton />
               <ThemeToggle />
