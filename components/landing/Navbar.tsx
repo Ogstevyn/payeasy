@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, Wallet, X } from "lucide-react";
+import { Menu, X, LogIn, UserPlus, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ConnectWalletButton from "@/components/wallet/ConnectWalletButton";
 import { useActiveSection } from "@/hooks/useActiveSection";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { useStellar } from "@/context/StellarContext";
+import { useEmailAuth } from "@/context/EmailAuthContext";
 
 export default function Navbar() {
   const router = useRouter();
-  const { isConnected } = useStellar();
+  const { user, logout } = useEmailAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -72,20 +72,42 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href={isConnected ? "/escrow/create" : "/connect"}
-            className="btn-secondary !py-2.5 !px-5 !text-sm !rounded-lg"
-          >
-            {isConnected ? "Dashboard" : "Sign In"}
-          </Link>
-          <Link
-            href="/connect"
-            className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg"
-            onMouseEnter={() => router.prefetch("/connect")}
-          >
-            <Wallet size={16} />
-            Connect Wallet
-          </Link>
+          {user ? (
+            <>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                <User size={14} className="text-brand-400" />
+                <span className="text-sm text-dark-200 font-medium max-w-[120px] truncate">
+                  {user.name}
+                </span>
+              </div>
+              <button
+                onClick={logout}
+                className="btn-secondary !py-2.5 !px-4 !text-sm !rounded-lg flex items-center gap-1.5"
+              >
+                <LogOut size={14} />
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="btn-secondary !py-2.5 !px-5 !text-sm !rounded-lg flex items-center gap-1.5"
+                onMouseEnter={() => router.prefetch("/login")}
+              >
+                <LogIn size={14} />
+                Sign In
+              </Link>
+              <Link
+                href="/signup"
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
+                onMouseEnter={() => router.prefetch("/signup")}
+              >
+                <UserPlus size={14} />
+                Sign Up
+              </Link>
+            </>
+          )}
           <ConnectWalletButton />
           <ThemeToggle />
         </div>
@@ -115,22 +137,42 @@ export default function Navbar() {
               </a>
             ))}
             <div className="h-px bg-white/10 my-2" />
-            <Link
-              href={isConnected ? "/escrow/create" : "/connect"}
-              className="btn-secondary !justify-center"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              {isConnected ? "Dashboard" : "Sign In"}
-            </Link>
-            <Link
-              href="/connect"
-              className="btn-primary !justify-center"
-              onMouseEnter={() => router.prefetch("/connect")}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Wallet size={16} />
-              Connect Wallet
-            </Link>
+            {user ? (
+              <>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10">
+                  <User size={14} className="text-brand-400" />
+                  <span className="text-sm text-dark-200 font-medium truncate">
+                    {user.name}
+                  </span>
+                </div>
+                <button
+                  onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                  className="btn-secondary !justify-center flex items-center gap-2"
+                >
+                  <LogOut size={14} />
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="btn-secondary !justify-center flex items-center gap-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <LogIn size={14} />
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <UserPlus size={14} />
+                  Sign Up
+                </Link>
+              </>
+            )}
             <div className="flex justify-center gap-3">
               <ConnectWalletButton />
               <ThemeToggle />
