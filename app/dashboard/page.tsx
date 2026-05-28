@@ -2,46 +2,49 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getLandlordEscrows, getLandlordStats } from "@/lib/stellar/queries";
+import { getLandlordEscrows, getLandlordStats, type EscrowContract, type LandlordStats } from "@/lib/stellar/queries";
+import { useStellar } from "@/context/StellarContext";
 import EscrowDashboardSkeleton from "@/components/escrow/EscrowDashboardSkeleton";
 import FundingProgress from "@/components/escrow/FundingProgress";
-import DeadlineCountdown from "@/components/escrow/DeadlineCountdown";
+import { DeadlineCountdown } from "@/components/escrow/DeadlineCountdown";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [escrows, setEscrows] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(true); // Replace with actual auth logic
+  const { isConnected, publicKey, isRestoring } = useStellar();
+  const [escrows, setEscrows] = useState<EscrowContract[]>([]);
+  const [stats, setStats] = useState<LandlordStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isRestoring) return;
+    if (!isConnected || !publicKey) {
+      router.push("/connect");
+      return;
+    }
+
     async function fetchData() {
       setLoading(true);
-      // TODO: Replace with actual auth check
-      const isConnected = true; // Replace with actual check
-      setConnected(isConnected);
-      if (!isConnected) {
-        router.push("/connect");
-        return;
-      }
+      setError(null);
       try {
         const [escrowsData, statsData] = await Promise.all([
-          getLandlordEscrows(),
-          getLandlordStats(),
+          getLandlordEscrows(publicKey!),
+          getLandlordStats(publicKey!),
         ]);
         setEscrows(escrowsData);
         setStats(statsData);
       } catch (e) {
-        // handle error
+        setError(e instanceof Error ? e.message : "Failed to load dashboard data.");
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, [router]);
+  }, [isConnected, publicKey, isRestoring, router]);
 
-  if (!connected) return null;
-  if (loading) return <EscrowDashboardSkeleton />;
+  if (isRestoring || loading) return <EscrowDashboardSkeleton />;
+  if (!isConnected) return null;
+  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (
     <div className="max-w-5xl mx-auto py-10">
@@ -63,13 +66,13 @@ export default function DashboardPage() {
         {escrows.map((escrow) => (
           <div key={escrow.id} className="bg-dark-900/40 rounded-xl p-6 flex flex-col gap-4">
             <div className="flex justify-between items-center">
-              <div className="font-bold text-lg">{escrow.name}</div>
+              <div className="font-bold text-lg">{escrow.id}</div>
               <button className="btn-primary !py-1.5 !px-4 !text-xs">Release</button>
             </div>
-            <FundingProgress funded={escrow.funded} total={escrow.total} />
+            <FundingProgress totalFunded={escrow.totalFunded} totalRequired={Number(escrow.totalRent)} />
             <div className="flex justify-between text-xs text-dark-500">
-              <div>Roommates: <span className="font-bold text-dark-200">{escrow.roommateCount}</span></div>
-              <div>Days to deadline: <DeadlineCountdown deadline={escrow.deadline} /></div>
+              <div>Status: <span className="font-bold text-dark-200">{escrow.status}</span></div>
+              <div>Deadline: <DeadlineCountdown deadlineEpoch={escrow.deadlineEpoch} /></div>
             </div>
           </div>
         ))}
