@@ -1,4 +1,3 @@
-import { test } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { findUserByEmail, createUser, toPublicUser } from "@/lib/auth/users";
@@ -53,6 +52,14 @@ export async function POST(req: NextRequest) {
     email: user.email,
     name: user.name,
   });
+
+  const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/verify-email?token=${encodeURIComponent(
+    user.verificationToken ?? ""
+  )}`;
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[EMAIL_VERIFICATION]", verificationUrl);
+  }
 
   const res = NextResponse.json({ user: toPublicUser(user) }, { status: 201 });
   res.cookies.set("auth_token", token, COOKIE_OPTS);
