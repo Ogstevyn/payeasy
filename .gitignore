@@ -47,3 +47,4 @@ scripts/
 test_snapshots/
 scripts/*
 !scripts/mint-test-tokens.sh
+!scripts/check-env.ts
