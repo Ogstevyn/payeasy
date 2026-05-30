@@ -27,19 +27,23 @@ export async function POST(req: NextRequest) {
     const authToken = req.cookies.get("auth_token")?.value;
 
     if (!authToken) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: "No token provided" },
         { status: 401 }
       );
+      res.headers.set("Cache-Control", "no-store");
+      return res;
     }
 
     // Verify token is valid
     const payload = await verifyToken(authToken);
     if (!payload) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: "Invalid or expired token" },
         { status: 401 }
       );
+      res.headers.set("Cache-Control", "no-store");
+      return res;
     }
 
     // Check if token is expiring within 24 hours
@@ -73,6 +77,7 @@ export async function POST(req: NextRequest) {
       message: "Token refreshed",
       user: toPublicUser(user),
     });
+    res.headers.set("Cache-Control", "no-store");
     res.cookies.set("auth_token", newToken, COOKIE_OPTS);
 
     return res;

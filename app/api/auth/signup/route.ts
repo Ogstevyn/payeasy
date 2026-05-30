@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
     });
 
     const res = NextResponse.json({ user: toPublicUser(user) }, { status: 201 });
+    res.headers.set("Cache-Control", "no-store");
     res.cookies.set("auth_token", token, COOKIE_OPTS);
     return res;
   } catch (err) {
