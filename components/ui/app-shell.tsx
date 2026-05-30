@@ -8,6 +8,7 @@ import { SkipLink } from "@/components/ui/skip-link";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import OfflineBanner from "./offline-banner";
 import AccountChangedBanner from "./account-changed-banner";
+import ServiceWorkerManager from "./service-worker-manager";
 
 /** True when the device reports fewer than 4 logical CPU cores. */
 const isLowEnd =
@@ -59,6 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ErrorBoundary>
         <OfflineBanner />
         <AccountChangedBanner />
+        <ServiceWorkerManager />
         <div className="relative z-10">{children}</div>
       </ErrorBoundary>
     </ThemeProvider>
