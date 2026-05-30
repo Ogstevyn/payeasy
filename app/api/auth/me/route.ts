@@ -7,10 +7,20 @@ export async function GET(req: NextRequest) {
   if (!token) return NextResponse.json(null);
 
   const payload = await verifyToken(token);
-  if (!payload) return NextResponse.json(null);
+  if (!payload) {
+    const res = NextResponse.json(null);
+    res.headers.set("Cache-Control", "no-store");
+    return res;
+  }
 
   const user = findUserById(payload.userId);
-  if (!user) return NextResponse.json(null);
+  if (!user) {
+    const res = NextResponse.json(null);
+    res.headers.set("Cache-Control", "no-store");
+    return res;
+  }
 
-  return NextResponse.json(toPublicUser(user));
+  const res = NextResponse.json(toPublicUser(user));
+  res.headers.set("Cache-Control", "no-store");
+  return res;
 }

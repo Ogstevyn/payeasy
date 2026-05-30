@@ -25,20 +25,20 @@ export async function POST(req: NextRequest) {
 
   // Check rate limit
   const rateLimit = rateLimiter.check(clientIp);
-  if (!rateLimit.allowed) {
+  if (!(rateLimit as any).allowed) {
     return NextResponse.json(
       {
         error: "Too many login attempts. Please try again later.",
-        retryAfter: rateLimit.retryAfter,
+        retryAfter: (rateLimit as any).retryAfter,
       },
       {
         status: 429,
         headers: {
-          "Retry-After": String(rateLimit.retryAfter || 900),
+          "Retry-After": String(((rateLimit as any).retryAfter ?? 900)), 
           "X-RateLimit-Limit": "10",
-          "X-RateLimit-Remaining": String(rateLimit.remaining),
+          "X-RateLimit-Remaining": String((rateLimit as any).remaining),
           "X-RateLimit-Reset": String(
-            Date.now() + rateLimit.resetAfter
+            Date.now() + (rateLimit as any).resetAfter
           ),
         },
       }
@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
     });
 
     const res = NextResponse.json({ user: toPublicUser(user) });
+    res.headers.set("Cache-Control", "no-store");
     res.cookies.set("auth_token", token, COOKIE_OPTS);
     return res;
   } catch (err) {
