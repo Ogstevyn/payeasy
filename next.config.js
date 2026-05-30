@@ -52,6 +52,7 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  compress: true,
   images: {
     remotePatterns: [
       {
@@ -72,7 +73,13 @@ const nextConfig = {
     return [
       {
         source: "/:path*",
-        headers: securityHeaders,
+        headers: [
+          ...securityHeaders,
+          {
+            key: "Accept-Encoding",
+            value: "br, gzip, deflate",
+          },
+        ],
       },
     ];
   },
