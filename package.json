@@ -9,6 +9,7 @@
     "analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "next lint",
+    "size": "size-limit",
     "test": "node --test --experimental-strip-types --experimental-test-module-mocks",
     "test:coverage": "node --test --experimental-strip-types --experimental-test-module-mocks --experimental-test-coverage"
   },
@@ -27,6 +28,8 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^14.2.0",
+    "@size-limit/file": "^11.0.0",
+    "size-limit": "^11.0.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
