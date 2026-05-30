@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import ApprovalStatus from "@/components/escrow/ApprovalStatus";
 import EscrowStatus from "@/components/escrow/EscrowStatus";
 import FundingProgress from "@/components/escrow/FundingProgress";
 import MultiSigApproval from "@/components/escrow/MultiSigApproval";
@@ -24,7 +25,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getExplorerLink } from "@/lib/stellar/explorer";
-import { createLandlordMajorityConfig } from "@/lib/stellar/multisig";
+import { createLandlordMajorityConfig, type ApprovalState } from "@/lib/stellar/multisig";
 import RefreshIndicator from "@/components/escrow/RefreshIndicator";
 import { useStellar } from "@/context/StellarContext";
 import { claimRefund, stroopsToXlm } from "@/lib/stellar/actions/claimRefund";
@@ -58,6 +59,7 @@ export default function EscrowDashboardClient({ contractId }: Props) {
   const [releaseError, setReleaseError] = useState<string | null>(null);
   const [isClaimingRefund, setIsClaimingRefund] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [approvals, setApprovals] = useState<ApprovalState[]>([]);
 
   const isLandlord =
     isConnected &&
@@ -481,7 +483,17 @@ export default function EscrowDashboardClient({ contractId }: Props) {
                 </div>
               )}
 
-              <MultiSigApproval config={multiSigConfig!} mockMode />
+              <ApprovalStatus
+                config={multiSigConfig!}
+                approvals={approvals}
+              />
+
+              <MultiSigApproval
+                config={multiSigConfig!}
+                mockMode
+                initialApprovals={approvals}
+                onApprovalChange={setApprovals}
+              />
             </div>
           )}
         </div>

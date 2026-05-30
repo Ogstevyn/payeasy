@@ -606,6 +606,46 @@ function stroopsToXlm(stroops: string): string {
   return fractionStr.length > 0 ? `${whole}.${fractionStr}` : whole.toString();
 }
 
+// ─── Release approvals ───────────────────────────────────────────────────────
+
+export interface ReleaseApprovalSnapshot {
+  signerAddress: string;
+  approvedAt: Date;
+}
+
+/**
+ * Returns a list of release approvals already collected for the escrow.
+ *
+ * The on-chain release method is a single atomic call rather than a long-lived
+ * vote, so approvals do not live on the contract directly. They are persisted
+ * client-side once a wallet signs the release XDR (see `MultiSigApproval`).
+ *
+ * Callers pass the addresses they have local evidence of approval for; this
+ * helper attaches the canonical timestamp shape `ApprovalStatus` consumes
+ * and filters out unknown signers so the UI never claims a stranger approved.
+ *
+ * Returning a stable, queryable shape from this module keeps the visualization
+ * layer ignorant of where approval evidence is stored (localStorage today,
+ * a backend table tomorrow).
+ */
+export function getReleaseApprovalsForSigners(
+  signerAddresses: string[],
+  approvedAddresses: Iterable<string>,
+  now: Date = new Date()
+): ReleaseApprovalSnapshot[] {
+  const signerSet = new Set(signerAddresses);
+  const seen = new Set<string>();
+  const result: ReleaseApprovalSnapshot[] = [];
+
+  for (const address of approvedAddresses) {
+    if (!signerSet.has(address) || seen.has(address)) continue;
+    seen.add(address);
+    result.push({ signerAddress: address, approvedAt: now });
+  }
+
+  return result;
+}
+
 // ─── User Escrows (Mocked) ───────────────────────────────────────────────────
 
 export async function getUserEscrows(publicKey: string): Promise<ContractState[]> {
