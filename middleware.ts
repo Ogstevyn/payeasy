@@ -1,22 +1,31 @@
+import createMiddleware from "next-intl/middleware";
+
+export default createMiddleware({
+  locales: ["en", "es"],
+  defaultLocale: "en",
+  localeDetection: true,
+  localePrefix: "as-needed",
+});
+
+export const config = {
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { generateCsrfToken, setCsrfCookie, CSRF_COOKIE_NAME } from "@/lib/auth/csrf";
 
-export function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const path = req.nextUrl.pathname;
+export function middleware(request: NextRequest) {
+  const requestId =
+    request.headers.get("x-request-id") ??
+    crypto.randomUUID();
 
-  // On GET requests to auth pages, set a csrf_token cookie if it doesn't exist yet
-  if (req.method === "GET" && (path === "/login" || path === "/signup")) {
-    if (!req.cookies.has(CSRF_COOKIE_NAME)) {
-      const token = generateCsrfToken();
-      setCsrfCookie(res, token);
-    }
-  }
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-request-id", requestId);
 
-  return res;
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("x-request-id", requestId);
+
+  return response;
 }
 
 export const config = {
-  matcher: ["/login", "/signup"],
+  matcher: "/api/:path*",
 };
