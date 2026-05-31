@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { findUserByEmail, createUser, toPublicUser } from "@/lib/auth/users";
 import { signToken } from "@/lib/auth/jwt";
 import { createRateLimiter, getClientIp } from "@/lib/auth/rate-limit";
+import { sanitizeEmail, sanitizeName, sanitizePassword } from "@/lib/auth/sanitize";
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   const clientIp = getClientIp(req.headers);
 
   // Check rate limit
-  const rateLimit = rateLimiter.check(clientIp);
+  const rateLimit = await rateLimiter.check(clientIp);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       {
@@ -49,9 +50,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { email, name, password } = body as Record<string, string>;
+  const {
+    email: rawEmail,
+    name: rawName,
+    password: rawPassword,
+  } = body as Record<string, unknown>;
+  const email = sanitizeEmail(rawEmail);
+  const name = sanitizeName(rawName);
+  const password = sanitizePassword(rawPassword);
 
-  if (!email?.trim() || !name?.trim() || !password) {
+  if (!email || !name || !password) {
     return NextResponse.json(
       { error: "Name, email, and password are required" },
       { status: 400 }

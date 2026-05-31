@@ -10,9 +10,11 @@ import {
   RotateCcw,
   Save,
   Download,
+  KeyRound,
 } from "lucide-react";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { usePreferences } from "@/hooks/usePreferences";
+import { useToast } from "@/hooks/useToast";
 import { useEmailAuth } from "@/context/EmailAuthContext";
 import type { UserPreferences } from "@/lib/preferences/preferences";
 
@@ -424,6 +426,121 @@ function PrivacySection({
   );
 }
 
+// ─── Password section ────────────────────────────────────────────────────────
+
+function PasswordSection() {
+  const toast = useToast();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const resetForm = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setError(null);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+
+    if (!currentPassword) {
+      setError("Current password is required.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setError("New password must be at least 8 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("New password and confirmation must match.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const res = await fetch("/api/user/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error ?? "Failed to update password.");
+      }
+
+      resetForm();
+      toast.success("Password updated successfully.");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Section title="Password">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Current Password">
+          <input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            autoComplete="current-password"
+            className={inputClass}
+          />
+        </Field>
+        <Field label="New Password">
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            autoComplete="new-password"
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Confirm New Password">
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+            className={inputClass}
+          />
+        </Field>
+
+        {error && (
+          <div className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="btn-secondary !w-full sm:!w-auto flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <KeyRound className="w-4 h-4" />
+          )}
+          {isSubmitting ? "Updating..." : "Update Password"}
+        </button>
+      </form>
+    </Section>
+  );
+}
+
 // ─── Data Export (GDPR) ───────────────────────────────────────────────────────
 
 function DataExportSection() {
@@ -545,6 +662,7 @@ export default function SettingsPage() {
       <LocationSection prefs={preferences} update={setPreferences} />
       <NotificationsSection prefs={preferences} update={setPreferences} />
       <PrivacySection prefs={preferences} update={setPreferences} />
+      <PasswordSection />
       <DataExportSection />
       <div className="flex flex-col sm:flex-row gap-3 pt-2">
         <button onClick={save} className="btn-primary !w-full sm:!w-auto flex items-center justify-center gap-2">

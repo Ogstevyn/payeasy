@@ -9,6 +9,7 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { sanitizeEmail, sanitizeName, sanitizePassword } from "@/lib/auth/sanitize";
 
 export interface AuthUser {
   id: string;
@@ -26,6 +27,11 @@ interface EmailAuthContextValue {
 }
 
 const EmailAuthContext = createContext<EmailAuthContextValue | null>(null);
+
+interface AuthResponseData {
+  error?: string;
+  user?: AuthUser;
+}
 
 /**
  * Handles HTTP responses with automatic token refresh on 401.
@@ -84,17 +90,22 @@ export function EmailAuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       let attempt = 0;
+      const sanitizedEmail = sanitizeEmail(email);
+      const sanitizedPassword = sanitizePassword(password);
 
       const doLogin = async (): Promise<Response> => {
         const res = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({
+            email: sanitizedEmail,
+            password: sanitizedPassword,
+          }),
         });
         return res;
       };
 
-      const result = await handleAuthResponse(await doLogin(), doLogin);
+      const result = await handleAuthResponse<AuthResponseData>(await doLogin(), doLogin);
 
       if (!result.ok) {
         throw new Error(result.data?.error ?? "Login failed");
@@ -107,16 +118,24 @@ export function EmailAuthProvider({ children }: { children: ReactNode }) {
 
   const signup = useCallback(
     async (email: string, name: string, password: string) => {
+      const sanitizedEmail = sanitizeEmail(email);
+      const sanitizedName = sanitizeName(name);
+      const sanitizedPassword = sanitizePassword(password);
+
       const doSignup = async (): Promise<Response> => {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, name, password }),
+          body: JSON.stringify({
+            email: sanitizedEmail,
+            name: sanitizedName,
+            password: sanitizedPassword,
+          }),
         });
         return res;
       };
 
-      const result = await handleAuthResponse(await doSignup(), doSignup);
+      const result = await handleAuthResponse<AuthResponseData>(await doSignup(), doSignup);
 
       if (!result.ok) {
         throw new Error(result.data?.error ?? "Sign up failed");

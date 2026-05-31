@@ -30,7 +30,7 @@ export interface PublicUser {
   emailVerified: boolean;
 }
 
-const DEFAULT_NOTIFICATIONS: NotificationPreferences = {
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   marketingEmails: false,
   securityAlerts: true,
   pushNotifications: true,
@@ -108,6 +108,7 @@ export function createUser(
     verificationToken,
     verificationTokenExpiresAt: tokenExpiresAt,
     notificationPreferences: DEFAULT_NOTIFICATIONS, // Apply defaults on creation
+    notificationPreferences: DEFAULT_NOTIFICATION_PREFERENCES, // Apply defaults on creation
   };
 
   users.push(user);
@@ -131,7 +132,7 @@ export function toPublicUser(user: StoredUser): PublicUser {
 export function getNotificationPreferences(userId: string): NotificationPreferences {
   const user = findUserById(userId);
   // Return the user's saved preferences, or defaults if they don't have any yet
-  return user?.notificationPreferences || DEFAULT_NOTIFICATIONS;
+  return user?.notificationPreferences || DEFAULT_NOTIFICATION_PREFERENCES;
 }
 
 export function isValidNotificationPatch(body: unknown): boolean {
@@ -161,7 +162,7 @@ export function updateNotificationPreferences(
     throw new Error("User not found");
   }
 
-  const currentPrefs = users[userIndex].notificationPreferences || DEFAULT_NOTIFICATIONS;
+  const currentPrefs = users[userIndex].notificationPreferences || DEFAULT_NOTIFICATION_PREFERENCES;
   const updatedPrefs = { ...currentPrefs, ...patch };
 
   // Update the user in the array and write back to the JSON file
@@ -169,4 +170,16 @@ export function updateNotificationPreferences(
   writeUsers(users);
 
   return updatedPrefs;
+}
+
+export function updateUserPasswordHash(userId: string, passwordHash: string): void {
+  const users = readUsers();
+  const userIndex = users.findIndex((u) => u.id === userId);
+
+  if (userIndex === -1) {
+    throw new Error("User not found");
+  }
+
+  users[userIndex].passwordHash = passwordHash;
+  writeUsers(users);
 }
