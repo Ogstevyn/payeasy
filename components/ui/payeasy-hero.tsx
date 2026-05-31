@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useAnimationFrame, animate } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface NavigationItem {
@@ -26,6 +26,7 @@ interface PayEasyHeroProps {
     label: string;
     onClick: () => void;
   };
+  headerActions?: React.ReactNode;
   title: string;
   subtitle: string;
   primaryAction?: {
@@ -55,6 +56,7 @@ export function PayEasyHero({
     { label: "Stellar", href: "#stellar" },
   ],
   ctaButton,
+  headerActions,
   title,
   subtitle,
   primaryAction,
@@ -66,7 +68,78 @@ export function PayEasyHero({
   className,
   children,
 }: PayEasyHeroProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Carousel State
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const x = useMotionValue(0);
+  const CARD_WIDTH = 340; // 320 width + 20 gap
+  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const totalWidth = programs.length * CARD_WIDTH;
+
+  useAnimationFrame((t, delta) => {
+    if (!isPaused && !isHovered && programs.length > 0) {
+      const speed = CARD_WIDTH / 4000;
+      let newX = x.get() - delta * speed;
+      
+      if (newX <= -totalWidth) {
+        newX += totalWidth;
+      }
+      x.set(newX);
+    }
+  });
+
+  const resetPauseTimeout = useCallback(() => {
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
+    }
+    setIsPaused(true);
+    pauseTimeoutRef.current = setTimeout(() => {
+      setIsPaused(false);
+    }, 5000);
+  }, []);
+
+  const handleNext = () => {
+    resetPauseTimeout();
+    const currentX = x.get();
+    const currentIdx = Math.floor(Math.abs(currentX) / CARD_WIDTH);
+    let nextIdx = currentIdx + 1;
+    let nextX = -(nextIdx * CARD_WIDTH);
+    
+    animate(x, nextX, { 
+      type: "spring", stiffness: 200, damping: 25,
+      onComplete: () => {
+        if (x.get() <= -totalWidth) {
+          x.set(x.get() + totalWidth);
+        }
+      }
+    });
+  };
+
+  const handlePrev = () => {
+    resetPauseTimeout();
+    const currentX = x.get();
+    const currentIdx = Math.ceil(Math.abs(currentX) / CARD_WIDTH);
+    let prevIdx = currentIdx - 1;
+    let prevX = -(prevIdx * CARD_WIDTH);
+    
+    if (prevX > 0) {
+      const jumpX = currentX - totalWidth;
+      x.set(jumpX);
+      prevX = jumpX + CARD_WIDTH;
+    }
+    
+    animate(x, prevX, { 
+      type: "spring", stiffness: 200, damping: 25,
+      onComplete: () => {
+        if (x.get() > 0) {
+          x.set(x.get() - totalWidth);
+        }
+      }
+    });
+  };
 
   return (
     <section
@@ -149,14 +222,14 @@ export function PayEasyHero({
         </nav>
 
         <div className="flex items-center gap-3">
-          {ctaButton && (
+          {headerActions ?? (ctaButton && (
             <button
               onClick={ctaButton.onClick}
               className="hidden sm:inline-flex btn-primary text-sm"
             >
               {ctaButton.label}
             </button>
-          )}
+          ))}
 
           <button
             className="lg:hidden text-dark-400 hover:text-white transition-colors"
@@ -194,7 +267,9 @@ export function PayEasyHero({
               {item.label}
             </a>
           ))}
-          {ctaButton && (
+          {headerActions ? (
+            <div className="mt-3 flex flex-col gap-2">{headerActions}</div>
+          ) : ctaButton && (
             <button
               onClick={ctaButton.onClick}
               className="btn-primary w-full mt-3 justify-center text-sm"
@@ -339,6 +414,8 @@ export function PayEasyHero({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.8 }}
           className="relative z-10 w-full overflow-hidden py-12"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           <div
             className="absolute left-0 top-0 bottom-0 z-10 pointer-events-none w-[150px]"
@@ -353,17 +430,37 @@ export function PayEasyHero({
             }}
           />
 
+          <motion.div 
+            className="absolute inset-y-0 left-8 z-20 flex items-center pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isHovered ? 1 : 0 }}
+          >
+            <button
+              onClick={handlePrev}
+              className="w-12 h-12 flex items-center justify-center rounded-full glass hover:bg-white/10 pointer-events-auto transition-colors"
+              aria-label="Previous card"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+          </motion.div>
+
+          <motion.div 
+            className="absolute inset-y-0 right-8 z-20 flex items-center pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isHovered ? 1 : 0 }}
+          >
+            <button
+              onClick={handleNext}
+              className="w-12 h-12 flex items-center justify-center rounded-full glass hover:bg-white/10 pointer-events-auto transition-colors"
+              aria-label="Next card"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </motion.div>
+
           <motion.div
             className="flex items-center gap-5 pl-5"
-            animate={{ x: [0, -(programs.length * 340) / 2] }}
-            transition={{
-              x: {
-                repeat: Infinity,
-                repeatType: "loop",
-                duration: programs.length * 4,
-                ease: "linear",
-              },
-            }}
+            style={{ x }}
           >
             {[...programs, ...programs].map((program, index) => {
               // #549 — only the first 2 visible cards are loaded eagerly;

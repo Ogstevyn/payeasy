@@ -1,3 +1,5 @@
+import { withRetry } from "./retry.ts";
+
 export type NetworkStatus = "healthy" | "degraded" | "down";
 
 export interface NetworkHealth {
@@ -13,7 +15,7 @@ export async function getNetworkHealth(): Promise<NetworkHealth> {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const res = await fetch(HORIZON_URL, { signal: controller.signal });
+    const res = await withRetry(() => fetch(HORIZON_URL, { signal: controller.signal }));
     clearTimeout(timer);
 
     if (!res.ok) {
@@ -52,8 +54,8 @@ export interface HealthReport {
 export async function getNetworkStatus(): Promise<HealthReport> {
   const timestamp = Date.now();
   try {
-    const health = await rpcServer.getHealth();
-    const ledger = await rpcServer.getLatestLedger();
+    const health = await withRetry(() => rpcServer.getHealth());
+    const ledger = await withRetry(() => rpcServer.getLatestLedger());
 
     let status: NetworkHealthStatus = "healthy";
 

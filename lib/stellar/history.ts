@@ -152,6 +152,16 @@ export interface CreateHorizonClientOptions {
   fetchFn?: FetchLike;
 }
 
+import { withRetry } from "./retry.ts";
+
+/**
+ * @description Creates a `HorizonClient` instance for fetching transaction and operation
+ * history from the Stellar Horizon REST API.
+ * @param options - Optional configuration including `baseUrl`, `network` (`"testnet"` or
+ * `"mainnet"`), and a custom `fetchFn` for testing or SSR environments.
+ * @returns A `HorizonClient` with `fetchTransactions` and `fetchOperations` methods.
+ * @throws {Error} If a Horizon request fails with a non-OK HTTP status.
+ */
 export function createHorizonClient(
   options: CreateHorizonClientOptions = {}
 ): HorizonClient {
@@ -166,26 +176,30 @@ export function createHorizonClient(
       if (params.limit !== undefined) query.set("limit", String(params.limit));
       if (params.order) query.set("order", params.order);
 
-      const response = await fetchFn(
-        `${baseUrl}/accounts/${encodeURIComponent(accountId)}/transactions?${query.toString()}`
-      );
-      if (!response.ok) {
-        throw new Error(`Failed to fetch transactions (${response.status}).`);
-      }
-      return (await response.json()) as HorizonTransactionPage;
+      return withRetry(async () => {
+        const response = await fetchFn(
+          `${baseUrl}/accounts/${encodeURIComponent(accountId)}/transactions?${query.toString()}`
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch transactions (${response.status}).`);
+        }
+        return (await response.json()) as HorizonTransactionPage;
+      });
     },
 
     async fetchOperations(txHash, params) {
       const query = new URLSearchParams();
       if (params.limit !== undefined) query.set("limit", String(params.limit));
 
-      const response = await fetchFn(
-        `${baseUrl}/transactions/${encodeURIComponent(txHash)}/operations?${query.toString()}`
-      );
-      if (!response.ok) {
-        throw new Error(`Failed to fetch operations (${response.status}).`);
-      }
-      return (await response.json()) as HorizonOperationPage;
+      return withRetry(async () => {
+        const response = await fetchFn(
+          `${baseUrl}/transactions/${encodeURIComponent(txHash)}/operations?${query.toString()}`
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch operations (${response.status}).`);
+        }
+        return (await response.json()) as HorizonOperationPage;
+      });
     },
   };
 }

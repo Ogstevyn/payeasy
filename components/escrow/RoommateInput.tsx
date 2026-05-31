@@ -89,7 +89,7 @@ export default function RoommateInput({
             Share Amount
           </label>
           {percentage !== null && (
-            <span className="text-xs font-medium text-brand-300">({percentage}%)</span>
+            <span id={`roommate-share-helper-${roommate.id}`} className="text-xs font-medium text-brand-300">({percentage}%)</span>
           )}
         </div>
         <input
@@ -103,7 +103,10 @@ export default function RoommateInput({
             if (event.target.value && Number(event.target.value) > 0) onClearError?.(roommate.id, "shareAmount");
           }}
           placeholder="0"
-          aria-describedby={errors.shareAmount ? shareErrorId : undefined}
+          aria-describedby={[
+            errors.shareAmount ? shareErrorId : undefined,
+            percentage !== null ? `roommate-share-helper-${roommate.id}` : undefined
+          ].filter(Boolean).join(" ") || undefined}
           aria-invalid={!!errors.shareAmount}
           className={`w-full rounded-xl border bg-white/5 px-3 py-2 text-sm text-dark-100 placeholder:text-dark-600 focus:outline-none transition-colors ${fieldBorderClass(errors.shareAmount, !!roommate.shareAmount && Number(roommate.shareAmount) > 0)}`}
         />

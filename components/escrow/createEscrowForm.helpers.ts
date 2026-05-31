@@ -1,5 +1,4 @@
 import type { SupportedToken } from "../../lib/stellar/config.ts";
-import { isDateOnOrAfterTomorrow } from "../ui/date-input.helpers.ts";
 
 export const MIN_ESCROW_STEP = 1;
 export const MAX_ESCROW_STEP = 4;
@@ -81,47 +80,32 @@ export function hasExactShareAllocation(
   return Math.abs(sumRoommateShares(roommates) - total) <= AMOUNT_TOLERANCE;
 }
 
-export const DUPLICATE_ROOMMATE_ADDRESS_MESSAGE = "This address has already been added.";
-
-/**
- * Returns the set of roommate IDs whose trimmed address duplicates an earlier
- * entry's address. Blank addresses are ignored so pre-filled-but-empty rows
- * don't collide with each other. Stellar addresses are case-sensitive, so
- * comparison is exact after trimming.
- */
-export function findDuplicateRoommateIds(
-  roommates: RoommateInputValue[]
-): Set<string> {
-  const seen = new Map<string, string>();
-  const duplicates = new Set<string>();
-
-  for (const roommate of roommates) {
-    const address = roommate.address.trim();
-    if (!address) continue;
-
-    const firstSeenId = seen.get(address);
-    if (firstSeenId === undefined) {
-      seen.set(address, roommate.id);
-      continue;
-    }
-
-    duplicates.add(roommate.id);
-  }
-
-  return duplicates;
-}
-
-export function hasDuplicateRoommateAddresses(
-  roommates: RoommateInputValue[]
-): boolean {
-  return findDuplicateRoommateIds(roommates).size > 0;
-}
-
 export function assignSupportedToken(
   draft: EscrowFormDraft,
   token: SupportedToken
 ): EscrowFormDraft {
   return { ...draft, tokenAddress: token.issuer };
+}
+
+export const DUPLICATE_ROOMMATE_ADDRESS_MESSAGE = "This address has already been added.";
+
+export function findDuplicateRoommateIds(roommates: RoommateInputValue[]): Set<string> {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const roommate of roommates) {
+    const trimmed = roommate.address.trim();
+    if (!trimmed) continue;
+    if (seen.has(trimmed)) {
+      duplicates.add(roommate.id);
+    } else {
+      seen.add(trimmed);
+    }
+  }
+  return duplicates;
+}
+
+export function hasDuplicateRoommateAddresses(roommates: RoommateInputValue[]): boolean {
+  return findDuplicateRoommateIds(roommates).size > 0;
 }
 
 export function formatFeeEstimate(feeXlm: string | null | undefined): string {
@@ -152,8 +136,6 @@ export function validateEscrowStep(
     const ledgerTimestamp = toLedgerTimestamp(draft.deadlineDate);
     if (!ledgerTimestamp) {
       errors.push("Set a valid deadline date.");
-    } else if (!isDateOnOrAfterTomorrow(draft.deadlineDate)) {
-      errors.push("Deadline must be tomorrow or later.");
     }
   }
 

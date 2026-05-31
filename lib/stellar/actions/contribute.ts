@@ -8,8 +8,12 @@ import {
   rpc,
 } from "@stellar/stellar-sdk";
 import { signTx } from "@/lib/stellar/wallet";
+import { assertValidStellarAddress, assertValidContractId } from "@/lib/stellar/validation";
 
-const SOROBAN_RPC_URL = "https://soroban-testnet.stellar.org";
+const rpcUrl = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || "";
+if (!rpcUrl) {
+  throw new Error("Missing required environment variable: NEXT_PUBLIC_SOROBAN_RPC_URL");
+}
 
 export interface ContributeParams {
   /** Public key of the contributing roommate */
@@ -33,7 +37,9 @@ export async function buildContributeXdr(
   params: ContributeParams
 ): Promise<string> {
   const { from, amount, contractId } = params;
-  const server = new rpc.Server(SOROBAN_RPC_URL);
+  assertValidStellarAddress(from);
+  assertValidContractId(contractId);
+  const server = new rpc.Server(rpcUrl);
 
   // Load the source account
   const sourceAccount = await server.getAccount(from);
@@ -76,7 +82,7 @@ export async function signAndSubmitContribute(
   xdr: string,
   from: string
 ): Promise<ContributeResult> {
-  const server = new rpc.Server(SOROBAN_RPC_URL);
+  const server = new rpc.Server(rpcUrl);
 
   // Sign with Freighter
   const signedXdr = await signTx(xdr, "TESTNET");

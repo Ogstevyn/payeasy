@@ -9,6 +9,7 @@ export const WalletErrorCode = {
   USER_DECLINED: "USER_DECLINED",
   NOT_INSTALLED: "NOT_INSTALLED",
   NETWORK_MISMATCH: "NETWORK_MISMATCH",
+  TIMEOUT: "TIMEOUT",
   UNKNOWN: "UNKNOWN",
 } as const;
 
@@ -36,6 +37,11 @@ export const WALLET_ERROR_MESSAGES: Record<WalletErrorCode, WalletError> = {
     message: "Your wallet is on the wrong network.",
     help: "PayEasy runs on Stellar Testnet. Open Freighter, go to Settings → Network, and switch to 'Testnet' before connecting.",
   },
+  [WalletErrorCode.TIMEOUT]: {
+    code: WalletErrorCode.TIMEOUT,
+    message: "Connection timed out. Is Freighter open?",
+    help: "The connection attempt took too long. Please ensure your Freighter extension is unlocked and try again. Sometimes the popup appears behind other windows.",
+  },
   [WalletErrorCode.UNKNOWN]: {
     code: WalletErrorCode.UNKNOWN,
     message: "Something went wrong connecting your wallet.",
@@ -62,6 +68,9 @@ export function getWalletError(error: unknown): WalletError {
   }
   if (msg.includes("network") || msg.includes("mismatch") || msg.includes("wrong network")) {
     return WALLET_ERROR_MESSAGES[WalletErrorCode.NETWORK_MISMATCH];
+  }
+  if (msg.includes("timeout") || msg.includes("timed out")) {
+    return WALLET_ERROR_MESSAGES[WalletErrorCode.TIMEOUT];
   }
   return WALLET_ERROR_MESSAGES[WalletErrorCode.UNKNOWN];
 }
@@ -164,7 +173,7 @@ const ERROR_MAPPINGS: Record<number | string, UserFriendlyError> = {
  * Translates a raw error from Stellar, Soroban, or Freighter into a user-friendly message.
  * @param error The raw error object or message string.
  */
-export function translateStellarError(error: any): UserFriendlyError {
+export function translateStellarError(error: unknown): UserFriendlyError {
   let errorKey: string | number = "UNKNOWN";
 
   if (typeof error === "string") {
@@ -176,11 +185,12 @@ export function translateStellarError(error: any): UserFriendlyError {
     else errorKey = error;
   } else if (error && typeof error === "object") {
     // Handle Soroban contract error codes (e.g., from simulation or resultXdr)
-    if (typeof error.code === "number") {
-      errorKey = error.code;
-    } else if (error.message) {
+    const err = error as { code?: unknown; message?: unknown };
+    if (typeof err.code === "number") {
+      errorKey = err.code;
+    } else if (typeof err.message === "string") {
       // Handle known error message substrings
-      const msg = error.message.toLowerCase();
+      const msg = err.message.toLowerCase();
       if (msg.includes("timeout")) errorKey = "TIMEOUT";
       else if (msg.includes("unavailable") || msg.includes("fetch")) errorKey = "NODE_UNAVAILABLE";
       else if (msg.includes("declined") || msg.includes("reject")) errorKey = "User declined";
@@ -198,6 +208,6 @@ export function translateStellarError(error: any): UserFriendlyError {
   return {
     type: StellarErrorType.UNKNOWN,
     message: "An unexpected Stellar error occurred.",
-    guidance: typeof error?.message === "string" ? error.message : "If the problem persists, please contact support with details of the action you were performing.",
+    guidance: typeof (error as { message?: unknown })?.message === "string" ? (error as { message: string }).message : "If the problem persists, please contact support with details of the action you were performing.",
   };
 }

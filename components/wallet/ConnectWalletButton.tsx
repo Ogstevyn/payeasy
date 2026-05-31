@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, LogOut, Copy, Check, ChevronDown, ExternalLink, AlertCircle, Coins, AlertTriangle, Maximize2, Minimize2 } from "lucide-react";
+import { Wallet, LogOut, Copy, ChevronDown, ExternalLink, AlertCircle, Loader2, Coins, AlertTriangle, Maximize2, Minimize2 } from "lucide-react";
 import { useStellarAuth } from "@/context/StellarContext";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
@@ -31,7 +31,6 @@ function toDisplayNetworkName(network: "TESTNET" | "MAINNET"): string {
 export default function ConnectWalletButton() {
   const { publicKey, isConnected, connect, disconnect, isConnecting, isFreighterInstalled, isRestoring, error } = useStellarAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [errorExpanded, setErrorExpanded] = useState(false);
   const { balance, isLoading: isBalanceLoading } = useWalletBalance(publicKey, isOpen);
   const [walletNetwork, setWalletNetwork] = useState<"TESTNET" | "MAINNET" | null>(null);
@@ -42,7 +41,6 @@ export default function ConnectWalletButton() {
   const isMobile = useIsMobile();
   const appNetwork = getCurrentNetwork();
 
-  // Auto-collapse full address when dropdown closes
   useEffect(() => {
     if (!isOpen) {
       setShowFullAddress(false);
@@ -58,14 +56,6 @@ export default function ConnectWalletButton() {
     ? `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`
     : "";
 
-  const handleCopy = async () => {
-    if (publicKey) {
-      await navigator.clipboard.writeText(publicKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const handleDisconnect = () => {
     disconnect();
     setIsOpen(false);
@@ -76,7 +66,6 @@ export default function ConnectWalletButton() {
     setShowConfirm(true);
   };
 
-  // Close dropdown when clicking outside (desktop only)
   useEffect(() => {
     if (isMobile) return;
     const handleClickOutside = (event: MouseEvent) => {
@@ -124,7 +113,7 @@ export default function ConnectWalletButton() {
   if (!isConnected) {
     return (
       <div className="flex flex-col items-end gap-1">
-        <button
+        <motion.button
           onClick={() => {
             if (!isFreighterInstalled) {
               router.push("/connect");
@@ -133,11 +122,31 @@ export default function ConnectWalletButton() {
             }
           }}
           disabled={isConnecting}
-          className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg flex items-center gap-2 group transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+          animate={
+            isConnecting
+              ? {
+                  boxShadow: [
+                    "0 0 0 1px rgba(92,124,250,0.3)",
+                    "0 0 0 2px rgba(92,124,250,0.7), 0 0 12px rgba(32,201,151,0.3)",
+                    "0 0 0 1px rgba(92,124,250,0.3)",
+                  ],
+                }
+              : { boxShadow: "0 0 0 0px rgba(0,0,0,0)" }
+          }
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          className={`btn-primary !py-2.5 !px-5 !text-sm !rounded-lg flex items-center gap-2 transition-all ${
+            isConnecting
+              ? "opacity-70 cursor-not-allowed"
+              : "group hover:scale-105 active:scale-95"
+          }`}
         >
-          <Wallet size={16} className="group-hover:rotate-12 transition-transform" />
+          {isConnecting ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Wallet size={16} className="group-hover:rotate-12 transition-transform" />
+          )}
           {isConnecting ? "Connecting..." : "Connect Wallet"}
-        </button>
+        </motion.button>
 
         {error && (
           <div className="text-right max-w-[220px]">
@@ -216,7 +225,6 @@ export default function ConnectWalletButton() {
         )}
       </button>
 
-      {/* Desktop dropdown */}
       {!isMobile && (
         <AnimatePresence>
           {isOpen && (
@@ -225,8 +233,35 @@ export default function ConnectWalletButton() {
               animate={{ opacity: 1, y: 5, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute right-0 top-full z-50 w-48 mt-2 glass rounded-xl border border-white/10 shadow-2xl overflow-hidden"
+              className="absolute right-0 top-full z-50 w-64 mt-2 glass rounded-xl border border-white/10 shadow-2xl overflow-hidden"
             >
+              <div className="px-3 py-2 border-b border-white/5 mb-1">
+                <div className="flex items-center justify-between mb-0.5">
+                  <p className="text-[10px] text-dark-500 uppercase tracking-widest font-semibold">Balance</p>
+                  <button
+                    onClick={() => setShowFullAddress(!showFullAddress)}
+                    className="p-1 rounded-md bg-white/5 hover:bg-brand-500/20 text-brand-400 transition-all"
+                    title={showFullAddress ? "Show Truncated" : "Show Full Address"}
+                  >
+                    {showFullAddress ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                  </button>
+                </div>
+                {isBalanceLoading ? (
+                  <div className="h-4 w-20 bg-dark-800/60 rounded animate-pulse" />
+                ) : (
+                  <p className="text-sm font-mono text-white flex items-center gap-1.5">
+                    <Coins size={13} className="text-brand-400" />
+                    {balance ?? "—"} XLM
+                  </p>
+                )}
+              </div>
+
+              <div className="px-3 py-2 bg-dark-950/30 rounded-lg mx-1 mb-2 border border-white/5">
+                <p className={`text-[11px] font-mono break-all leading-relaxed ${showFullAddress ? "text-dark-100" : "text-dark-400"}`}>
+                  {showFullAddress ? publicKey : truncatedKey}
+                </p>
+              </div>
+
               <div className="p-1">
                 {menuItems}
               </div>
@@ -235,7 +270,6 @@ export default function ConnectWalletButton() {
         </AnimatePresence>
       )}
 
-      {/* Mobile bottom sheet */}
       {isMobile && (
         <BottomSheet
           isOpen={isOpen}
@@ -247,80 +281,13 @@ export default function ConnectWalletButton() {
           </div>
         </BottomSheet>
       )}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 5, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute right-0 top-full z-50 w-64 mt-2 glass rounded-xl border border-white/10 shadow-2xl overflow-hidden"
-          >
-            {/* Balance display */}
-            <div className="px-3 py-2 border-b border-white/5 mb-1">
-              <div className="flex items-center justify-between mb-0.5">
-                <p className="text-[10px] text-dark-500 uppercase tracking-widest font-semibold">Balance</p>
-                <button 
-                  onClick={() => setShowFullAddress(!showFullAddress)}
-                  className="p-1 rounded-md bg-white/5 hover:bg-brand-500/20 text-brand-400 transition-all"
-                  title={showFullAddress ? "Show Truncated" : "Show Full Address"}
-                >
-                  {showFullAddress ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                </button>
-              </div>
-              {isBalanceLoading ? (
-                <div className="h-4 w-20 bg-dark-800/60 rounded animate-pulse" />
-              ) : (
-                <p className="text-sm font-mono text-white flex items-center gap-1.5">
-                  <Coins size={13} className="text-brand-400" />
-                  {balance ?? "—"} XLM
-                </p>
-              )}
-            </div>
-
-            <div className="px-3 py-2 bg-dark-950/30 rounded-lg mx-1 mb-2 border border-white/5">
-              <p className={`text-[11px] font-mono break-all leading-relaxed ${showFullAddress ? "text-dark-100" : "text-dark-400"}`}>
-                {showFullAddress ? publicKey : truncatedKey}
-              </p>
-            </div>
-
-            <div className="p-1">
-              <div className="flex items-center justify-between px-3 py-2 hover:bg-white/5 rounded-lg transition-colors">
-                <div className="flex items-center gap-3 text-sm text-dark-300">
-                  <Copy size={16} />
-                  <span>Copy Address</span>
-                </div>
-                <CopyButton value={publicKey || ""} label="Copy wallet address" className="!p-1 hover:!bg-transparent" />
-              </div>
-              
-              <button
-                onClick={() => { setIsOpen(false); router.push("/connect"); }}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-dark-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-              >
-                <ExternalLink size={16} />
-                <span>Wallet Dashboard</span>
-              </button>
-
-              <div className="h-px bg-white/5 my-1" />
-
-              <button
-                onClick={confirmDisconnect}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
-              >
-                <LogOut size={16} />
-                <span>Disconnect</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <ConfirmDialog
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={handleDisconnect}
         title="Disconnect Wallet?"
-        description="Are you sure you want to disconnect? You'll need to reconnect to interact with your escrows."
+        description="Are you sure you want to disconnect? You&apos;ll need to reconnect to interact with your escrows."
         confirmText="Disconnect"
         variant="danger"
       />

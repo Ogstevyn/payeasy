@@ -33,9 +33,6 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 
   useEffect(() => {
     if (!isWebGLAvailable()) {
-      console.warn(
-        "[DottedSurface] WebGL is not available in this browser. Skipping Three.js renderer."
-      );
       return;
     }
 
@@ -118,7 +115,7 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
         new THREE.Float32BufferAttribute(colors, 3)
       );
 
-      const material = new TßHREE.PointsMaterial({
+      const material = new THREE.PointsMaterial({
         size: 6,
         vertexColors: true,
         transparent: true,

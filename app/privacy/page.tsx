@@ -19,6 +19,9 @@ export default function PrivacyPage() {
           <div className="w-16 h-16 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400 mb-8">
             <Shield size={32} />
           </div>
+          <div className="text-dark-500 text-sm italic mb-2">
+            Last updated: April 26, 2026
+          </div>
           <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none">
             Privacy <span className="text-brand-400">Policy</span>
           </h1>
@@ -29,32 +32,35 @@ export default function PrivacyPage() {
 
         <div className="glass-card p-8 md:p-12 space-y-10 text-dark-300 leading-relaxed">
           <section className="space-y-4">
-            <h2 className="text-2xl font-bold text-white tracking-tight">1. Data Collection</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">1. Data Collected</h2>
             <p>
               PayEasy is a decentralized platform. We do not store your private keys or personal financial data. 
-              On-chain data is public by design of the Stellar network.
+              We collect your public wallet address and transaction history on the testnet to enable escrow functionality.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-bold text-white tracking-tight">2. On-Chain Information</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">2. How It&apos;s Used</h2>
             <p>
-              When you interact with our smart contracts, your public wallet address and transaction history 
-              are recorded on the Stellar blockchain. This information is immutable and publicly accessible.
+              Your data is used strictly to facilitate testnet transactions, test the smart contracts, and improve the user experience.
+              On-chain data is public by design of the Stellar network. We do not use your data for marketing.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-bold text-white tracking-tight">3. Cookies & Analytics</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">3. Third Parties</h2>
             <p>
-              We use minimal local storage to remember your draft forms and UI preferences. 
-              We do not use tracking cookies for advertising.
+              We may share necessary transaction payloads with the Stellar testnet. 
+              We do not sell, rent, or trade your personal information with third-party advertisers or data brokers.
             </p>
           </section>
 
-          <div className="pt-8 border-t border-white/5 text-dark-500 text-sm italic">
-            Last updated: April 26, 2026
-          </div>
+          <section className="space-y-4">
+            <h2 className="text-2xl font-bold text-white tracking-tight">4. Contact</h2>
+            <p>
+              For any privacy-related questions or concerns, please reach out to us at privacy@payeasy.dev.
+            </p>
+          </section>
         </div>
       </div>
     </main>

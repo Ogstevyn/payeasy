@@ -10,6 +10,22 @@ try {
 
 const createNextIntlPlugin = require("next-intl/plugin");
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
+let withSentryConfig = (config) => config;
+
+try {
+  const { withSentryConfig: sentryConfig } = require("@sentry/nextjs");
+  withSentryConfig = (config) =>
+    sentryConfig(config, {
+      // Suppresses source map upload logs during build.
+      silent: true,
+      // Upload source maps only in CI/production to avoid local leaks.
+      disableSourceMapUpload: !process.env.CI,
+      // Automatically instrument server components and API routes.
+      autoInstrumentServerFunctions: true,
+    });
+} catch {
+  // Keep builds working until @sentry/nextjs is installed.
+}
 
 const securityHeaders = [
   {
@@ -38,28 +54,38 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  compress: true,
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "i.pravatar.cc",
-        pathname: "/**",
-      },
       {
         protocol: "https",
         hostname: "images.unsplash.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "i.pravatar.cc",
+        pathname: "/**",
+      },
     ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 3600,
   },
   async headers() {
     return [
       {
         source: "/:path*",
-        headers: securityHeaders,
+        headers: [
+          ...securityHeaders,
+          {
+            key: "Accept-Encoding",
+            value: "br, gzip, deflate",
+          },
+        ],
       },
     ];
   },
 };
 
 module.exports = withBundleAnalyzer(withNextIntl(nextConfig));
+module.exports = withSentryConfig(withBundleAnalyzer(nextConfig));

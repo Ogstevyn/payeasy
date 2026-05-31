@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { 
   ArrowUpRight, 
   ArrowDownLeft, 
@@ -27,21 +27,31 @@ export interface Transaction {
   timestamp: string;
   txHash: string;
   contractId?: string;
+  fee?: string;
+  sourceAccount?: string;
+  operationCount?: number;
+  operations?: Array<{
+    type: string;
+    from?: string;
+    to?: string;
+    amount?: string;
+    asset?: string;
+    function?: string;
+  }>;
+  memo?: string;
 }
 
 interface TransactionCardProps {
-  /**
-   * Transaction data to display.
-   */
   transaction: Transaction;
   isNew?: boolean;
+  onClick?: (tx: Transaction) => void;
 }
 
 /**
  * A card component that displays an individual transaction's details.
  * Features specialized icons and color schemes based on the transaction type.
  */
-export default function TransactionCard({ transaction, isNew = false }: TransactionCardProps) {
+export default memo(function TransactionCard({ transaction, isNew = false, onClick }: TransactionCardProps) {
   const router = useRouter();
 
   const explorerLink = useMemo(() => {
@@ -90,7 +100,10 @@ export default function TransactionCard({ transaction, isNew = false }: Transact
   }[transaction.type];
 
   return (
-    <div className={`glass-card p-5 group transition-all duration-300 hover:border-white/20 active:scale-[0.98] shadow-lg ${config.shadow} hover:shadow-xl`}>
+    <div 
+      onClick={() => onClick?.(transaction)}
+      className={`glass-card p-5 group transition-all duration-300 hover:border-white/20 active:scale-[0.98] shadow-lg ${config.shadow} hover:shadow-xl cursor-pointer`}
+    >
       <div className="flex items-center gap-4">
         <div className={`p-3 rounded-2xl ${config.bg} ${config.color} border ${config.border} shadow-inner transition-transform group-hover:rotate-6 sm:group-hover:scale-110`}>
           {config.icon}

@@ -1,95 +1,4 @@
-"use client";
-
-import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { RefreshCw } from "lucide-react";
-import EventLog from "@/components/escrow/EventLog";
-import { getContractEvents, ContractEvent } from "@/lib/stellar/events";
-
-const POLL_INTERVAL_MS = 30_000;
-
-export default function EscrowContractPage() {
-  const params = useParams();
-  const contractId = typeof params.contractId === "string" ? params.contractId : "";
-
-  const [events, setEvents] = useState<ContractEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
-
-  const fetchEvents = useCallback(async () => {
-    if (!contractId) return;
-    const fresh = await getContractEvents(contractId);
-    // Prepend truly new events (keep reverse-chronological order)
-    setEvents((prev) => {
-      const existingIds = new Set(prev.map((e) => e.id));
-      const newOnes = fresh.filter((e) => !existingIds.has(e.id));
-      return [...newOnes, ...prev];
-    });
-    setLastFetched(new Date());
-    setIsLoading(false);
-  }, [contractId]);
-
-  useEffect(() => {
-    fetchEvents();
-    const timer = setInterval(fetchEvents, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [fetchEvents]);
-
-  return (
-    <main className="min-h-screen pt-24 pb-16 px-6">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
-          <div className="min-w-0">
-            <h1 className="text-3xl font-bold text-white">Escrow Dashboard</h1>
-            <p className="text-dark-500 mt-1 text-sm font-mono truncate max-w-xs sm:max-w-lg">
-              {contractId}
-            </p>
-          </div>
-          <button
-            onClick={fetchEvents}
-            className="btn-secondary !py-2 !px-4 !text-sm !rounded-lg flex items-center gap-2"
-            aria-label="Refresh events"
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </button>
-        </div>
-
-        {/* Event Log */}
-        <section className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-white">Event Log</h2>
-            {lastFetched && (
-              <p className="text-dark-600 text-xs">
-                Updated {lastFetched.toLocaleTimeString()}
-              </p>
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <EventLog events={events} />
-          )}
-        </section>
-
-        <div className="mt-6 text-center">
-          <Link
-            href="/"
-            className="text-sm text-dark-500 hover:text-brand-400 transition-colors"
-          >
-            &larr; Back to home
-          </Link>
-        </div>
-      </div>
-    </main>
-  );
-}
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import EscrowDashboardClient from "./EscrowDashboardClient";
 
 export async function generateMetadata({ params }: { params: { contractId: string } }): Promise<Metadata> {
@@ -102,7 +11,49 @@ export async function generateMetadata({ params }: { params: { contractId: strin
   };
 }
 
-export default function EscrowDashboardPage({ params }: { params: { contractId: string } }) {
-  return <EscrowDashboardClient contractId={params.contractId} />;
-}
+import { getContractState } from "@/lib/stellar/queries";
+import EscrowNotFound from "@/components/escrow/EscrowNotFound";
 
+export default async function EscrowDashboardPage({ params }: { params: { contractId: string } }) {
+  let contractState = null;
+  try {
+    if (params.contractId.startsWith("ESCROW_")) {
+      contractState = {
+        id: params.contractId,
+        landlord: "GDX7F2UWKYY3Q5Z3B6L4D7U7Y3T5X2J6K7L8M9N0P1Q2R3S4T5U6V7W8",
+        totalRent: "1500",
+        deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
+          year: "numeric", month: "short", day: "numeric"
+        }),
+        deadlineEpoch: Math.floor(Date.now() / 1000) + 5 * 24 * 60 * 60,
+        status: "active" as const,
+        totalFunded: 750,
+        lastUpdate: new Date().toISOString(),
+        roommates: [
+          {
+            address: "GDX7F2UWKYY3Q5Z3B6L4D7U7Y3T5X2J6K7L8M9N0P1Q2R3S4T5U6V7W8",
+            expectedShare: "750",
+            paidAmount: "750",
+            isPaid: true
+          },
+          {
+            address: "GBY4H334UWKYY3Q5Z3B6L4D7U7Y3T5X2J6K7L8M9N0P1Q2R3S4T5U6V7W8",
+            expectedShare: "750",
+            paidAmount: "0",
+            isPaid: false
+          }
+        ]
+      };
+    } else {
+      contractState = await getContractState(params.contractId);
+    }
+    if (!contractState) {
+      return <EscrowNotFound />;
+    }
+  } catch (err) {
+    // Contract query failed (e.g., contract not found on-chain or network error)
+    return <EscrowNotFound />;
+  }
+
+  return <EscrowDashboardClient contractId={params.contractId} initialContractState={contractState} />;
+}

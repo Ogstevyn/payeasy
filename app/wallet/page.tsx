@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { useWallet } from "@/hooks/useWallet";
-import { Copy, Plus, History, Coins, ArrowUpRight, ArrowDownLeft, CheckCircle2, Clock, XCircle, Check } from "lucide-react";
+import { formatXLM, formatDate } from "@/lib/utils/format";
+import { Copy, Plus, History, ArrowUpRight, ArrowDownLeft, CheckCircle2, Clock, XCircle, Check } from "lucide-react";
+import FundTestnetButton from "@/components/wallet/FundTestnetButton";
 
 export default function WalletDashboard() {
   const router = useRouter();
@@ -31,15 +33,6 @@ export default function WalletDashboard() {
   const truncateAddress = (address: string) => {
     if (!address) return "";
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(date);
   };
 
   if (isLoading) {
@@ -74,7 +67,7 @@ export default function WalletDashboard() {
           <div>
             <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Your Balance</h2>
             <div className="text-4xl font-bold text-gray-900 dark:text-white flex items-baseline gap-2">
-              {walletData?.balance.toFixed(2)} <span className="text-lg text-gray-500 dark:text-gray-400 font-normal">XLM</span>
+              {walletData ? formatXLM(walletData.balance) : "0.00"} <span className="text-lg text-gray-500 dark:text-gray-400 font-normal">XLM</span>
             </div>
           </div>
           <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-900 px-3 py-1.5 rounded-full">
@@ -117,12 +110,7 @@ export default function WalletDashboard() {
           View History
         </button>
         {walletData?.network === "testnet" && (
-          <button
-            className="flex items-center justify-center gap-2 p-4 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-200 rounded-xl transition-colors font-medium"
-          >
-            <Coins className="w-5 h-5" />
-            Fund Testnet
-          </button>
+          <FundTestnetButton publicKey={walletData?.address ?? ""} />
         )}
       </div>
 
@@ -154,7 +142,7 @@ export default function WalletDashboard() {
                   <p className={`font-medium ${
                     tx.type === "receive" ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white"
                   }`}>
-                    {tx.type === "receive" ? "+" : "-"}{tx.amount.toFixed(2)} XLM
+                    {tx.type === "receive" ? "+" : "-"}{formatXLM(tx.amount)} XLM
                   </p>
                   <div className="flex items-center justify-end gap-1 mt-1">
                     {tx.status === "success" && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
