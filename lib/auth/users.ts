@@ -136,3 +136,22 @@ export function updateUserPasswordHash(userId: string, passwordHash: string): vo
   users[userIndex].passwordHash = passwordHash;
   writeUsers(users);
 }
+
+export function updateUserProfile(
+  userId: string,
+  name: string,
+  email: string
+): StoredUser {
+  const users = readUsers();
+  const userIndex = users.findIndex((u) => u.id === userId);
+
+  if (userIndex === -1) {
+    throw new Error("User not found");
+  }
+
+  users[userIndex].name = name.trim();
+  users[userIndex].email = email.toLowerCase().trim();
+  writeUsers(users);
+
+  return users[userIndex];
+}
